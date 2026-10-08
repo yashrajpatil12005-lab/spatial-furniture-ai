@@ -23,12 +23,12 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F0F0F]/90 backdrop-blur-md border-b border-[#27272A] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] transition-all">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
         <div className="flex justify-between h-16 items-center">
           {/* Brand Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-xl font-bold tracking-tight text-[#F5F5F5] hover:opacity-90 transition-opacity flex items-center gap-1.5">
+            <Link href="/" className="text-xl font-bold tracking-tight text-[#111827] hover:opacity-90 transition-opacity flex items-center gap-1">
               <span>Spatial</span>
               <span className="text-[#10B981]">AI</span>
             </Link>
@@ -42,10 +42,10 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? 'text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/20 font-semibold'
-                      : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#181818]'
+                      ? 'text-[#047857] bg-[#ECFDF5] font-semibold'
+                      : 'text-[#475569] hover:text-[#059669] hover:bg-[#F8FAFC]'
                   }`}
                 >
                   {link.label}
@@ -60,12 +60,12 @@ export default function Navbar() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono text-[#10B981] bg-[#10B981]/10 px-2.5 py-1 rounded-full border border-[#10B981]/30">
+                    <span className="text-xs font-mono font-semibold text-[#047857] bg-[#ECFDF5] px-2.5 py-1 rounded-full border border-[#A7F3D0]">
                       Role: {userData?.role || '...'}
                     </span>
                     <button
                       onClick={() => logoutUser()}
-                      className="text-xs font-medium text-[#A1A1AA] hover:text-red-400 px-2.5 py-1.5 rounded-md hover:bg-[#181818] border border-transparent hover:border-[#27272A] transition-colors"
+                      className="text-xs font-medium text-[#475569] hover:text-red-600 px-3 py-1.5 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
                     >
                       Logout
                     </button>
@@ -74,13 +74,13 @@ export default function Navbar() {
                   <div className="flex items-center space-x-2">
                     <Link
                       href="/login"
-                      className="text-sm font-medium text-[#A1A1AA] hover:text-[#F5F5F5] px-3 py-1.5 rounded-md hover:bg-[#181818] transition-colors"
+                      className="text-sm font-medium text-[#475569] hover:text-[#111827] px-3.5 py-1.5 rounded-lg hover:bg-[#F8FAFC] transition-colors"
                     >
                       Log in
                     </Link>
                     <Link
                       href="/register"
-                      className="rounded-md bg-[#10B981] hover:bg-[#059669] px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors"
+                      className="rounded-lg bg-[#10B981] hover:bg-[#059669] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors"
                     >
                       Sign up
                     </Link>
@@ -95,7 +95,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               type="button"
-              className="p-2 rounded-md text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#181818] focus:outline-none"
+              className="p-2 rounded-lg text-[#475569] hover:text-[#111827] hover:bg-[#F1F5F9] focus:outline-none"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -114,7 +114,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[#27272A] bg-[#141414] px-4 pt-2 pb-4 space-y-2">
+        <div className="md:hidden border-b border-[#E2E8F0] bg-white px-5 pt-3 pb-5 space-y-2">
           {navLinks.map((link) => {
             const active = isActive(link.href);
             return (
@@ -122,10 +122,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                className={`block px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                   active
-                    ? 'text-[#10B981] bg-[#10B981]/10 font-semibold'
-                    : 'text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#181818]'
+                    ? 'text-[#047857] bg-[#ECFDF5] font-semibold'
+                    : 'text-[#475569] hover:text-[#059669] hover:bg-[#F8FAFC]'
                 }`}
               >
                 {link.label}
@@ -133,12 +133,12 @@ export default function Navbar() {
             );
           })}
 
-          <div className="pt-3 border-t border-[#27272A] mt-2">
+          <div className="pt-3 border-t border-[#E2E8F0] mt-3">
             {!loading && (
               <>
                 {user ? (
                   <div className="flex items-center justify-between py-1">
-                    <span className="text-xs font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/30">
+                    <span className="text-xs font-mono font-semibold text-[#047857] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
                       Role: {userData?.role || '...'}
                     </span>
                     <button
@@ -146,7 +146,7 @@ export default function Navbar() {
                         setMobileMenuOpen(false);
                         logoutUser();
                       }}
-                      className="text-xs font-medium text-red-400 hover:text-red-300"
+                      className="text-xs font-semibold text-red-600 hover:text-red-700"
                     >
                       Logout
                     </button>
@@ -156,14 +156,14 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-center py-2 text-sm text-[#A1A1AA] hover:text-white"
+                      className="text-center py-2 text-sm font-medium text-[#475569] hover:text-[#111827]"
                     >
                       Log in
                     </Link>
                     <Link
                       href="/register"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-center py-2 text-sm font-semibold rounded-md bg-[#10B981] text-white"
+                      className="text-center py-2 text-sm font-semibold rounded-lg bg-[#10B981] text-white"
                     >
                       Sign up
                     </Link>

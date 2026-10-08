@@ -33,17 +33,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   return (
     <ProtectedRoute allowedRoles={['retailer', 'admin']}>
-      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-8 sm:py-12 px-5 sm:px-8 lg:px-10">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="pb-4 border-b border-[#27272A]">
-            <Link href="/retailer/products" className="text-xs text-[#A1A1AA] hover:text-[#F5F5F5] flex items-center gap-1 mb-2">
+          <div className="pb-4 border-b border-[#E2E8F0]">
+            <Link href="/retailer/products" className="text-xs font-semibold text-[#047857] hover:text-[#059669] flex items-center gap-1 mb-2 transition-colors">
               <span>&larr;</span>
               <span>Back to Products</span>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#111827]">
               Edit <span className="text-[#10B981]">Product</span>
             </h1>
-            <p className="mt-1 text-xs text-[#A1A1AA]">
+            <p className="mt-1 text-xs text-[#64748B]">
               Modify inventory quantity, physical dimensions, or media attributes.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
           {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+            <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#B91C1C] font-medium">
               {error}
             </div>
           )}

@@ -32,17 +32,17 @@ export default function AdminCatalogHealth({ products }: AdminCatalogHealthProps
     .sort((a, b) => b.count - a.count);
 
   return (
-    <div className="rounded-xl bg-[#141414] border border-[#27272A] p-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#27272A]">
+    <div className="rounded-2xl bg-white border border-[#E2E8F0] p-6 sm:p-8 card-shadow">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#E2E8F0]">
         <div>
-          <h2 className="text-base font-bold text-[#F5F5F5]">Product &amp; Catalog Health</h2>
-          <p className="text-xs text-[#71717A] mt-0.5">
+          <h2 className="text-base font-bold text-[#111827]">Product &amp; Catalog Health</h2>
+          <p className="text-xs text-[#64748B] mt-0.5">
             Inventory stock status distribution and category balance
           </p>
         </div>
         <div className="mt-2 sm:mt-0 flex items-center space-x-2">
-          <span className="text-xs text-[#71717A]">Catalog:</span>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#181818] text-[#F5F5F5] border border-[#27272A]">
+          <span className="text-xs text-[#64748B]">Catalog:</span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#F1F5F9] text-[#111827] border border-[#E2E8F0]">
             {total} items
           </span>
         </div>
@@ -50,11 +50,11 @@ export default function AdminCatalogHealth({ products }: AdminCatalogHealthProps
 
       {/* Stock Health Progress Bar */}
       <div className="mt-6">
-        <div className="flex justify-between items-center text-xs text-[#A1A1AA] mb-2 font-medium">
+        <div className="flex justify-between items-center text-xs text-[#475569] mb-2 font-medium">
           <span>Inventory Ratio Breakdown</span>
-          <span className="text-[#10B981] font-semibold">{inStockPct}% Optimal</span>
+          <span className="text-[#047857] font-bold">{inStockPct}% Optimal</span>
         </div>
-        <div className="h-2.5 w-full rounded-full bg-[#0A0A0A] border border-[#27272A] flex overflow-hidden">
+        <div className="h-3 w-full rounded-full bg-slate-100 border border-[#E2E8F0] flex overflow-hidden">
           <div
             style={{ width: `${inStockPct}%` }}
             className="bg-[#10B981] transition-all duration-500"
@@ -75,74 +75,74 @@ export default function AdminCatalogHealth({ products }: AdminCatalogHealthProps
 
       {/* Health Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-        <div className="p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
-              <span className="text-xs font-medium text-[#A1A1AA]">Optimal (&gt;5)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
+              <span className="text-xs font-semibold text-[#475569]">Optimal (&gt;5)</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{inStock}</div>
+            <div className="text-2xl font-extrabold text-[#111827] mt-2">{inStock}</div>
           </div>
-          <span className="text-xs font-mono font-semibold text-[#10B981] bg-[#10B981]/10 px-2 py-1 rounded border border-[#10B981]/20">
+          <span className="text-xs font-mono font-bold text-[#047857] bg-[#ECFDF5] px-2.5 py-1 rounded-lg border border-[#A7F3D0]">
             {inStockPct}%
           </span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
-              <span className="text-xs font-medium text-[#A1A1AA]">Low Stock (1–5)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>
+              <span className="text-xs font-semibold text-[#475569]">Low Stock (1–5)</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{lowStock}</div>
+            <div className="text-2xl font-extrabold text-[#111827] mt-2">{lowStock}</div>
           </div>
-          <span className="text-xs font-mono font-semibold text-[#F59E0B] bg-[#F59E0B]/10 px-2 py-1 rounded border border-[#F59E0B]/20">
+          <span className="text-xs font-mono font-bold text-[#B45309] bg-[#FFFBEB] px-2.5 py-1 rounded-lg border border-[#FDE68A]">
             {lowStockPct}%
           </span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#EF4444]"></span>
-              <span className="text-xs font-medium text-[#A1A1AA]">Out of Stock (0)</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
+              <span className="text-xs font-semibold text-[#475569]">Out of Stock (0)</span>
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{outOfStock}</div>
+            <div className="text-2xl font-extrabold text-[#111827] mt-2">{outOfStock}</div>
           </div>
-          <span className="text-xs font-mono font-semibold text-[#EF4444] bg-[#EF4444]/10 px-2 py-1 rounded border border-[#EF4444]/20">
+          <span className="text-xs font-mono font-bold text-[#B91C1C] bg-[#FEF2F2] px-2.5 py-1 rounded-lg border border-[#FECACA]">
             {outOfStockPct}%
           </span>
         </div>
       </div>
 
       {/* Category Distribution with Visual Progress Indicators */}
-      <div className="mt-6 pt-5 border-t border-[#27272A]">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA] mb-4">
+      <div className="mt-6 pt-5 border-t border-[#E2E8F0]">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#475569] mb-4">
           Category Distribution
         </h3>
         {categories.length === 0 ? (
-          <p className="text-xs text-[#71717A] italic">No category data recorded</p>
+          <p className="text-xs text-[#64748B] italic">No category data recorded</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {categories.map((c) => (
               <div
                 key={c.name}
-                className="p-3.5 rounded-xl bg-[#0A0A0A] border border-[#27272A] flex flex-col justify-between space-y-2"
+                className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between space-y-2"
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[#F5F5F5] truncate max-w-[120px]">
+                  <span className="font-semibold text-[#111827] truncate max-w-[120px]">
                     {c.name}
                   </span>
-                  <span className="font-mono text-[#10B981] font-semibold">{c.count} items</span>
+                  <span className="font-bold text-[#047857]">{c.count} items</span>
                 </div>
                 {/* Visual Progress Indicator */}
-                <div className="w-full h-1.5 rounded-full bg-[#181818] overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
                   <div 
                     style={{ width: `${Math.max(c.pct, 4)}%` }} 
                     className="h-full bg-[#10B981] rounded-full" 
                   />
                 </div>
-                <div className="text-[10px] text-[#71717A] text-right font-mono">
+                <div className="text-[10px] text-[#64748B] text-right font-medium">
                   {c.pct}% of catalog
                 </div>
               </div>

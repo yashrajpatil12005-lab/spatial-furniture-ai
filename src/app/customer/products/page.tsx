@@ -12,8 +12,6 @@ export default function CustomerProductsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch all products ONCE on mount for performance requirement
-    // Filtering will be handled locally in CustomerProductDiscovery
     fetchProducts();
   }, []);
 
@@ -31,14 +29,14 @@ export default function CustomerProductsPage() {
 
   return (
     <ProtectedRoute allowedRoles={['customer', 'retailer', 'admin']}>
-      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-10 px-5 sm:px-8 lg:px-10">
+        <div className="max-w-[1280px] mx-auto space-y-10">
           {/* Header */}
-          <div className="pb-6 border-b border-[#27272A]">
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-4xl">
+          <div className="pb-6 border-b border-[#E2E8F0]">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
               Explore <span className="text-[#10B981]">Furniture</span>
             </h1>
-            <p className="mt-2 text-sm text-[#A1A1AA]">
+            <p className="mt-2 text-base text-[#475569]">
               Discover premium spatial furniture designed for real-world environments.
             </p>
           </div>

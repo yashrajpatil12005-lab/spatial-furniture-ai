@@ -22,7 +22,7 @@ export default function AdminIntegrationStatus({
       category: 'Authentication',
       status: status?.firebase || 'Configured',
       statusDot: 'bg-[#10B981]',
-      textColor: 'text-[#10B981]',
+      textColor: 'text-[#047857]',
       description: 'Client SDK initialization and user session token management',
     },
     {
@@ -30,7 +30,7 @@ export default function AdminIntegrationStatus({
       category: 'Database',
       status: status?.firestore || 'Connected',
       statusDot: 'bg-[#10B981]',
-      textColor: 'text-[#10B981]',
+      textColor: 'text-[#047857]',
       description: 'Authoritative product collection, schema, and security rules',
     },
     {
@@ -38,30 +38,30 @@ export default function AdminIntegrationStatus({
       category: 'Intelligence',
       status: status?.gemini || (loading ? 'Checking...' : 'Not configured'),
       statusDot: status?.gemini === 'Configured' ? 'bg-[#10B981]' : 'bg-[#F59E0B]',
-      textColor: status?.gemini === 'Configured' ? 'text-[#10B981]' : 'text-amber-400',
+      textColor: status?.gemini === 'Configured' ? 'text-[#047857]' : 'text-[#B45309]',
       description: 'Gemini 2.5 Flash for multimodal room analysis & recommendations',
     },
     {
       name: 'AR / Spatial Computing',
       category: 'Augmented Reality',
       status: status?.spatialComputing || 'In Development',
-      statusDot: 'bg-[#A1A1AA]',
-      textColor: 'text-[#A1A1AA]',
+      statusDot: 'bg-[#94A3B8]',
+      textColor: 'text-[#64748B]',
       description: 'Unity AR Foundation mobile bridge & 3D model spatial preview pipeline',
     },
   ];
 
   return (
-    <div className="rounded-xl bg-[#141414] border border-[#27272A] p-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#27272A]">
+    <div className="rounded-2xl bg-white border border-[#E2E8F0] p-6 sm:p-8 card-shadow">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#E2E8F0]">
         <div>
-          <h2 className="text-base font-bold text-[#F5F5F5]">System Integrations</h2>
-          <p className="text-xs text-[#71717A] mt-0.5">
+          <h2 className="text-base font-bold text-[#111827]">System Integrations</h2>
+          <p className="text-xs text-[#64748B] mt-0.5">
             Core service configuration and environment indicators
           </p>
         </div>
-        <span className="mt-2 sm:mt-0 text-[10px] font-mono text-[#A1A1AA] bg-[#0A0A0A] px-2.5 py-1 rounded-full border border-[#27272A]">
-          Setup Status
+        <span className="mt-2 sm:mt-0 text-[10px] font-semibold text-[#047857] bg-[#ECFDF5] px-3 py-1 rounded-full border border-[#A7F3D0]">
+          Active System
         </span>
       </div>
 
@@ -69,26 +69,26 @@ export default function AdminIntegrationStatus({
         {integrations.map((item) => (
           <div
             key={item.name}
-            className="p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] hover:border-slate-700 transition-colors"
+            className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-slate-300 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#71717A]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
                   {item.category}
                 </span>
-                <h3 className="text-xs font-bold text-[#F5F5F5] mt-0.5">{item.name}</h3>
+                <h3 className="text-xs font-bold text-[#111827] mt-0.5">{item.name}</h3>
               </div>
-              <span className={`inline-flex items-center text-xs font-mono font-medium ${item.textColor}`}>
-                <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${item.statusDot}`} />
+              <span className={`inline-flex items-center text-xs font-semibold ${item.textColor}`}>
+                <span className={`w-2 h-2 rounded-full mr-1.5 ${item.statusDot}`} />
                 {loading ? 'Checking...' : item.status}
               </span>
             </div>
-            <p className="text-xs text-[#A1A1AA] mt-2.5 leading-relaxed">{item.description}</p>
+            <p className="text-xs text-[#475569] mt-2.5 leading-relaxed">{item.description}</p>
           </div>
         ))}
       </div>
 
-      <p className="mt-4 text-[10px] text-[#71717A] italic">
+      <p className="mt-4 text-[10px] text-[#64748B] italic">
         * Status indicators represent static environment configuration and connection states.
       </p>
     </div>

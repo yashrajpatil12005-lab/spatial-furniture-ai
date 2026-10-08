@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0F0F0F;
-  --background-secondary: #111111;
-  --card: #141414;
-  --card-elevated: #181818;
-  --input: #0A0A0A;
-  --foreground: #F5F5F5;
-  --foreground-secondary: #A1A1AA;
-  --foreground-muted: #71717A;
-  --border: #27272A;
-  --primary-accent: #10B981;
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-secondary: #F1F5F9;
+  --foreground: #111827;
+  --foreground-secondary: #475569;
+  --foreground-muted: #64748B;
+  --border: #E2E8F0;
+  --primary-brand: #10B981;
   --primary-hover: #059669;
+  --brand-light: #ECFDF5;
+  --brand-dark-text: #047857;
+  --warning: #F59E0B;
+  --warning-light: #FFFBEB;
+  --error: #EF4444;
+  --error-light: #FEF2F2;
 }
 
 @theme inline {
@@ -22,39 +26,52 @@
 }
 
 * {
-  border-color: #27272A;
+  border-color: #E2E8F0;
 }
 
 body {
-  background-color: #0F0F0F;
-  color: #F5F5F5;
+  background-color: #F8FAFC;
+  color: #111827;
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom dark scrollbar */
+/* Clean light scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F0F0F;
+  background: #F1F5F9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272A;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3F3F46;
+  background: #94A3B8;
 }
 
-/* Selection */
+/* Subtle selection */
 ::selection {
-  background-color: rgba(16, 185, 129, 0.25);
-  color: #F5F5F5;
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #047857;
+}
+
+/* Premium Card Shadow */
+.card-shadow {
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+.card-shadow-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-shadow-hover:hover {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
 }

@@ -69,21 +69,21 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
   };
 
   return (
-    <div className="bg-[#141414] border border-[#27272A] rounded-xl p-6 shadow-sm">
-      <div className="flex items-center justify-between pb-4 border-b border-[#27272A]">
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm">
+      <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
         <div>
-          <h2 className="text-base font-bold text-[#F5F5F5]">Customization Studio</h2>
-          <p className="text-xs text-[#71717A] mt-0.5">Configure fabric, color swatches, and spatial dimensions</p>
+          <h2 className="text-base font-bold text-[#111827]">Customization Studio</h2>
+          <p className="text-xs text-[#64748B] mt-0.5">Configure fabric, color swatches, and spatial dimensions</p>
         </div>
-        <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/30">
-          Interactive
+        <span className="text-[10px] font-semibold text-[#047857] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
+          Interactive 3D Ready
         </span>
       </div>
       
       <div className="space-y-5 mt-5">
         {/* Color Selection */}
         <div>
-          <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
             Color Palette
           </label>
           <div className="flex flex-wrap gap-2">
@@ -94,14 +94,14 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
                 <button
                   key={color}
                   onClick={() => handleChange('color', color)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
                     isSelected 
-                      ? 'border-[#10B981] bg-[#10B981]/10 text-white ring-1 ring-[#10B981]' 
-                      : 'border-[#27272A] bg-[#0A0A0A] text-[#A1A1AA] hover:text-[#F5F5F5] hover:border-slate-600'
+                      ? 'border-[#10B981] bg-[#ECFDF5] text-[#047857] ring-1 ring-[#10B981] font-semibold' 
+                      : 'border-[#E2E8F0] bg-white text-[#475569] hover:text-[#111827] hover:border-slate-300'
                   }`}
                 >
                   <span 
-                    className="w-3 h-3 rounded-full border border-white/20 inline-block" 
+                    className="w-3.5 h-3.5 rounded-full border border-slate-300 inline-block shadow-sm" 
                     style={{ backgroundColor: hex }}
                   />
                   <span>{color}</span>
@@ -113,13 +113,13 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
 
         {/* Material Selection */}
         <div>
-          <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
             Material Texture
           </label>
           <select 
             value={customization.material}
             onChange={(e) => handleChange('material', e.target.value)}
-            className="w-full rounded-lg bg-[#0A0A0A] border border-[#27272A] px-3 py-2 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] transition-colors"
+            className="w-full rounded-xl bg-white border border-[#E2E8F0] px-3.5 py-2.5 text-xs text-[#111827] font-medium focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all"
           >
             {CUSTOMIZATION_MATERIALS.map(mat => (
               <option key={mat} value={mat}>{mat}</option>
@@ -129,7 +129,7 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
 
         {/* Finish Selection */}
         <div>
-          <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
             Finish &amp; Coating
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -139,10 +139,10 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
                 <button
                   key={finish}
                   onClick={() => handleChange('finish', finish)}
-                  className={`px-3 py-2 rounded-lg text-xs text-center border font-medium transition-all ${
+                  className={`px-3 py-2 rounded-xl text-xs text-center border font-medium transition-all ${
                     isSelected 
-                      ? 'border-[#10B981] bg-[#10B981]/15 text-[#10B981] font-semibold' 
-                      : 'border-[#27272A] bg-[#0A0A0A] text-[#A1A1AA] hover:text-[#F5F5F5] hover:bg-[#181818]'
+                      ? 'border-[#10B981] bg-[#ECFDF5] text-[#047857] font-semibold ring-1 ring-[#10B981]' 
+                      : 'border-[#E2E8F0] bg-white text-[#475569] hover:text-[#111827] hover:bg-[#F8FAFC]'
                   }`}
                 >
                   {finish}
@@ -154,7 +154,7 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
 
         {/* Dimensions */}
         <div>
-          <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
             Dimensions (Width &times; Height &times; Depth in cm)
           </label>
           <div className="flex items-center space-x-2">
@@ -162,38 +162,38 @@ export default function FurnitureCustomizer({ product, onCustomizationChange }: 
               type="number" 
               value={customization.width} 
               onChange={(e) => handleChange('width', Math.max(1, Number(e.target.value)))}
-              className="w-full rounded-lg bg-[#0A0A0A] border border-[#27272A] px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-3 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               placeholder="W"
             />
-            <span className="text-[#71717A]">&times;</span>
+            <span className="text-[#94A3B8] font-bold">&times;</span>
             <input 
               type="number" 
               value={customization.height} 
               onChange={(e) => handleChange('height', Math.max(1, Number(e.target.value)))}
-              className="w-full rounded-lg bg-[#0A0A0A] border border-[#27272A] px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-3 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               placeholder="H"
             />
-            <span className="text-[#71717A]">&times;</span>
+            <span className="text-[#94A3B8] font-bold">&times;</span>
             <input 
               type="number" 
               value={customization.depth} 
               onChange={(e) => handleChange('depth', Math.max(1, Number(e.target.value)))}
-              className="w-full rounded-lg bg-[#0A0A0A] border border-[#27272A] px-2.5 py-1.5 text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-3 py-2 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] text-center [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               placeholder="D"
             />
           </div>
         </div>
 
         {/* Configuration Summary & Reset Action */}
-        <div className="pt-4 border-t border-[#27272A] flex items-center justify-between gap-3">
-          <div className="text-[11px] text-[#A1A1AA] truncate">
+        <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-between gap-3">
+          <div className="text-xs text-[#047857] bg-[#ECFDF5] px-3 py-1.5 rounded-lg border border-[#A7F3D0] truncate font-medium">
             {customization.color} &bull; {customization.material} &bull; {customization.finish}
           </div>
           <button 
             onClick={handleReset}
-            className="py-1.5 px-3 rounded-lg border border-[#27272A] text-[11px] font-medium text-[#A1A1AA] hover:text-[#F5F5F5] bg-[#0A0A0A] hover:bg-[#181818] transition-colors flex-shrink-0"
+            className="py-1.5 px-3 rounded-lg border border-[#E2E8F0] text-xs font-medium text-[#64748B] hover:text-[#111827] bg-white hover:bg-[#F8FAFC] transition-colors flex-shrink-0"
           >
-            Reset to Default
+            Reset
           </button>
         </div>
       </div>

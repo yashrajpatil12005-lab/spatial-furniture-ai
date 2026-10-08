@@ -42,10 +42,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   if (allowedRoles) {
     if (!userData) {
       return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-          <div className="bg-[#141414] border border-[#27272A] p-6 rounded-2xl max-w-md">
-            <p className="text-red-400 font-bold mb-2 text-sm">Account Verification</p>
-            <p className="text-xs text-[#A1A1AA]">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-[#F8FAFC]">
+          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl max-w-md card-shadow">
+            <p className="text-red-600 font-bold mb-2 text-sm">Account Verification</p>
+            <p className="text-xs text-[#64748B]">
               Your profile data is loading or could not be found. Please try refreshing or signing in again.
             </p>
           </div>

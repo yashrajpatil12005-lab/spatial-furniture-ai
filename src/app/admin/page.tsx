@@ -80,28 +80,28 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
-      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-8 sm:py-12 px-5 sm:px-8 lg:px-10">
+        <div className="max-w-[1280px] mx-auto space-y-8">
           {/* HEADER */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-[#27272A]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-[#E2E8F0]">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-4xl">
+                <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
                   System <span className="text-[#10B981]">Admin</span>
                 </h1>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 uppercase tracking-wide">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0] uppercase tracking-wide">
                   {userData?.role || 'admin'}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-[#A1A1AA]">
+              <p className="mt-2 text-sm text-[#475569]">
                 Monitor and manage the Spatial Furniture AI platform.
               </p>
             </div>
 
             <div className="flex items-center gap-3 self-start md:self-auto">
               <div className="text-right hidden sm:block">
-                <p className="text-[11px] font-medium text-[#71717A]">Logged in as</p>
-                <p className="text-xs font-semibold text-[#F5F5F5]">
+                <p className="text-[11px] font-medium text-[#64748B]">Logged in as</p>
+                <p className="text-xs font-semibold text-[#111827]">
                   {userData?.name || user?.displayName || 'Admin'}
                 </p>
               </div>
@@ -109,7 +109,7 @@ export default function AdminPage() {
               <button
                 onClick={handleRefresh}
                 disabled={loading || refreshing}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#141414] hover:bg-[#181818] text-xs font-medium text-[#F5F5F5] px-3.5 py-2 border border-[#27272A] hover:border-slate-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-[#F8FAFC] text-xs font-semibold text-[#111827] px-4 py-2.5 border border-[#E2E8F0] shadow-sm transition-all disabled:opacity-50"
                 title="Refresh platform data"
               >
                 <svg
@@ -132,16 +132,16 @@ export default function AdminPage() {
 
           {/* ERROR STATE */}
           {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-xs font-medium">{error}</span>
               </div>
               <button
                 onClick={handleRefresh}
-                className="text-xs font-semibold underline hover:text-red-300"
+                className="text-xs font-semibold underline hover:text-red-700"
               >
                 Retry
               </button>
@@ -153,11 +153,11 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-32 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
+                  <div key={i} className="h-32 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse card-shadow" />
                 ))}
               </div>
-              <div className="h-64 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
-              <div className="h-64 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
+              <div className="h-64 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse card-shadow" />
+              <div className="h-64 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse card-shadow" />
             </div>
           ) : (
             <>

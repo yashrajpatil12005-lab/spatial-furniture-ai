@@ -58,10 +58,10 @@ export default function AdminQuickActions() {
   ];
 
   return (
-    <div className="rounded-xl bg-[#141414] border border-[#27272A] p-6 shadow-sm">
-      <div className="pb-4 border-b border-[#27272A]">
-        <h2 className="text-base font-bold text-[#F5F5F5]">Quick Actions</h2>
-        <p className="text-xs text-[#71717A] mt-0.5">
+    <div className="rounded-2xl bg-white border border-[#E2E8F0] p-6 sm:p-8 card-shadow">
+      <div className="pb-4 border-b border-[#E2E8F0]">
+        <h2 className="text-base font-bold text-[#111827]">Quick Actions</h2>
+        <p className="text-xs text-[#64748B] mt-0.5">
           Fast portal navigation for administrative workflows and cross-role verification
         </p>
       </div>
@@ -71,20 +71,20 @@ export default function AdminQuickActions() {
           <Link
             key={act.title}
             href={act.href}
-            className="group flex flex-col justify-between p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] hover:border-[#10B981]/50 hover:bg-[#111] transition-all"
+            className="group flex flex-col justify-between p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#10B981] hover:bg-white transition-all shadow-sm"
           >
             <div>
-              <div className="p-2 rounded-lg bg-[#141414] w-fit border border-[#27272A] group-hover:border-[#10B981]/30 transition-colors">
+              <div className="p-2.5 rounded-xl bg-white w-fit border border-[#E2E8F0] group-hover:border-[#10B981]/40 transition-colors shadow-xs">
                 {act.icon}
               </div>
-              <h3 className="text-xs font-bold text-[#F5F5F5] mt-3 group-hover:text-[#10B981] transition-colors">
+              <h3 className="text-xs font-bold text-[#111827] mt-3 group-hover:text-[#047857] transition-colors">
                 {act.title}
               </h3>
-              <p className="text-[11px] text-[#71717A] mt-1 line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-[#64748B] mt-1 line-clamp-2 leading-relaxed">
                 {act.description}
               </p>
             </div>
-            <span className="mt-4 text-[11px] font-semibold text-[#10B981] inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            <span className="mt-4 text-[11px] font-semibold text-[#047857] inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Open &rarr;
             </span>
           </Link>

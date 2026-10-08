@@ -19,7 +19,7 @@ export default function LoginPage() {
     
     try {
       await loginUser(email, password);
-      router.push('/customer'); // default redirect
+      router.push('/customer');
     } catch (err: any) {
       setError(err.message || 'Failed to login');
     } finally {
@@ -28,14 +28,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[82vh] flex items-center justify-center bg-[#0F0F0F] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-[#141414] p-8 sm:p-10 rounded-2xl border border-[#27272A] shadow-xl">
+    <div className="min-h-[82vh] flex items-center justify-center bg-[#F8FAFC] py-12 px-5 sm:px-8 lg:px-10">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-2xl border border-[#E2E8F0] card-shadow">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 mb-4">
-            <span className="text-lg font-bold text-[#10B981]">S</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] mb-4">
+            <span className="text-xl font-bold text-[#047857]">S</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#F5F5F5]">Welcome Back</h1>
-          <p className="mt-2 text-sm text-[#A1A1AA]">
+          <h1 className="text-2xl font-bold tracking-tight text-[#111827]">Welcome Back</h1>
+          <p className="mt-2 text-sm text-[#475569]">
             Sign in to access your SpatialAI portal
           </p>
         </div>
@@ -43,7 +43,7 @@ export default function LoginPage() {
         <form className="mt-8 space-y-5" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">
+              <label htmlFor="email-address" className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
                 Email Address
               </label>
               <input
@@ -51,7 +51,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                className="block w-full px-3.5 py-2.5 rounded-lg bg-[#0A0A0A] border border-[#27272A] text-[#F5F5F5] placeholder-[#71717A] text-sm focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-colors"
+                className="block w-full px-4 py-2.5 rounded-xl bg-white border border-[#CBD5E1] text-[#111827] placeholder-[#94A3B8] text-sm focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 transition-all"
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -59,7 +59,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">
+              <label htmlFor="password" className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
                 Password
               </label>
               <input
@@ -67,7 +67,7 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
-                className="block w-full px-3.5 py-2.5 rounded-lg bg-[#0A0A0A] border border-[#27272A] text-[#F5F5F5] placeholder-[#71717A] text-sm focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-colors"
+                className="block w-full px-4 py-2.5 rounded-xl bg-white border border-[#CBD5E1] text-[#111827] placeholder-[#94A3B8] text-sm focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -76,7 +76,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400 text-center">
+            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-red-200 text-xs text-[#EF4444] text-center font-medium">
               {error}
             </div>
           )}
@@ -85,16 +85,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-semibold text-white bg-[#10B981] hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#10B981] focus:ring-offset-2 focus:ring-offset-[#141414] disabled:opacity-50 transition-all shadow-sm"
+              className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#10B981] hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#10B981] focus:ring-offset-2 disabled:opacity-50 transition-all shadow-sm"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </div>
 
           <div className="text-center pt-2">
-            <p className="text-xs text-[#A1A1AA]">
+            <p className="text-xs text-[#64748B]">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="font-semibold text-[#10B981] hover:underline">
+              <Link href="/register" className="font-semibold text-[#047857] hover:underline">
                 Create an account
               </Link>
             </p>
