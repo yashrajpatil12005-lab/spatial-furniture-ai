@@ -80,28 +80,28 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
-      <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* HEADER */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-slate-800">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-[#27272A]">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                  System <span className="text-emerald-400">Admin</span>
+                <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] sm:text-4xl">
+                  System <span className="text-[#10B981]">Admin</span>
                 </h1>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 uppercase tracking-wide">
                   {userData?.role || 'admin'}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-[#A1A1AA]">
                 Monitor and manage the Spatial Furniture AI platform.
               </p>
             </div>
 
             <div className="flex items-center gap-3 self-start md:self-auto">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-medium text-slate-400">Logged in as</p>
-                <p className="text-sm font-semibold text-white">
+                <p className="text-[11px] font-medium text-[#71717A]">Logged in as</p>
+                <p className="text-xs font-semibold text-[#F5F5F5]">
                   {userData?.name || user?.displayName || 'Admin'}
                 </p>
               </div>
@@ -109,11 +109,11 @@ export default function AdminPage() {
               <button
                 onClick={handleRefresh}
                 disabled={loading || refreshing}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 px-3.5 py-2 border border-slate-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#141414] hover:bg-[#181818] text-xs font-medium text-[#F5F5F5] px-3.5 py-2 border border-[#27272A] hover:border-slate-700 transition-colors disabled:opacity-50"
                 title="Refresh platform data"
               >
                 <svg
-                  className={`w-4 h-4 text-emerald-400 ${refreshing ? 'animate-spin' : ''}`}
+                  className={`w-3.5 h-3.5 text-[#10B981] ${refreshing ? 'animate-spin' : ''}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -125,7 +125,7 @@ export default function AdminPage() {
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
-                {refreshing ? 'Refreshing...' : 'Refresh'}
+                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function AdminPage() {
                 <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm">{error}</span>
+                <span className="text-xs font-medium">{error}</span>
               </div>
               <button
                 onClick={handleRefresh}
@@ -153,11 +153,11 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-32 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
+                  <div key={i} className="h-32 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
                 ))}
               </div>
-              <div className="h-64 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
-              <div className="h-64 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse" />
+              <div className="h-64 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
+              <div className="h-64 rounded-xl bg-[#141414] border border-[#27272A] animate-pulse" />
             </div>
           ) : (
             <>

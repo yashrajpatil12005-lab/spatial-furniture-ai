@@ -16,14 +16,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        console.log("[ProtectedRoute] No user found, redirecting to /login");
         router.push('/login');
       } else if (allowedRoles) {
         if (!userData) {
-          console.warn("[ProtectedRoute] User is logged in but has no userData document. Redirecting to home.");
           router.push('/');
         } else if (!allowedRoles.includes(userData.role)) {
-          console.warn(`[ProtectedRoute] User role '${userData.role}' is not in allowed roles: ${allowedRoles.join(', ')}. Redirecting.`);
           router.push('/');
         }
       }
@@ -32,8 +29,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   if (loading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]"></div>
       </div>
     );
   }
@@ -42,13 +39,16 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return null; // Will redirect via useEffect
   }
 
-  // If roles are required and user data is missing or role is unauthorized, show error instead of hanging
   if (allowedRoles) {
     if (!userData) {
       return (
-        <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-8">
-          <p className="text-red-500 font-bold mb-2">Account Error</p>
-          <p className="text-neutral-600">Your profile data could not be found. Please try logging out and registering again.</p>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
+          <div className="bg-[#141414] border border-[#27272A] p-6 rounded-2xl max-w-md">
+            <p className="text-red-400 font-bold mb-2 text-sm">Account Verification</p>
+            <p className="text-xs text-[#A1A1AA]">
+              Your profile data is loading or could not be found. Please try refreshing or signing in again.
+            </p>
+          </div>
         </div>
       );
     }

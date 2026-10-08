@@ -24,9 +24,9 @@ export default function RetailerProductsPage() {
     try {
       setLoading(true);
       const data = await getRetailerProducts(user!.uid);
-      setProducts(data);
+      setProducts(data || []);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching retailer products:', error);
     } finally {
       setLoading(false);
     }
@@ -37,48 +37,65 @@ export default function RetailerProductsPage() {
       await deleteProduct(id);
       setProducts(products.filter(p => p.id !== id));
     } catch (error) {
-      console.error("Failed to delete product", error);
-      alert("Failed to delete product. Please check console.");
+      console.error('Failed to delete product', error);
+      alert('Failed to delete product. Please check console.');
     }
   };
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (p.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <ProtectedRoute allowedRoles={['retailer', 'admin']}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="sm:flex sm:items-center sm:justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold leading-7 text-neutral-900 sm:truncate sm:text-3xl sm:tracking-tight">
-              Products
-            </h1>
-            <p className="mt-1 text-sm text-neutral-500">Manage your furniture catalog and inventory.</p>
-          </div>
-          <div className="mt-4 sm:ml-4 sm:mt-0">
-            <Link href="/retailer/products/new" className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500">
-              Add Product
-            </Link>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* Header */}
+          <div className="pb-6 border-b border-[#27272A] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Link href="/retailer" className="text-xs text-[#A1A1AA] hover:text-[#F5F5F5]">&larr; Dashboard</Link>
+              </div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-[#F5F5F5] mt-1 sm:text-4xl">
+                Catalog <span className="text-[#10B981]">Products</span>
+              </h1>
+              <p className="mt-1 text-sm text-[#A1A1AA]">
+                Manage inventory counts, pricing, and 3D asset metadata.
+              </p>
+            </div>
 
-        <div className="mb-6 max-w-md">
-          <input 
-            type="text" 
-            placeholder="Search products..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full rounded-md border-neutral-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2"
-          />
-        </div>
+            <div>
+              <Link 
+                href="/retailer/products/new" 
+                className="inline-flex items-center rounded-lg bg-[#10B981] hover:bg-[#059669] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+              >
+                + Add Product
+              </Link>
+            </div>
+          </div>
 
-        {loading ? (
-          <p>Loading products...</p>
-        ) : (
-          <ProductTable products={filteredProducts} onDelete={handleDelete} />
-        )}
+          {/* Search bar */}
+          <div className="max-w-md">
+            <input 
+              type="text" 
+              placeholder="Search by product name or category..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full rounded-lg bg-[#0A0A0A] border border-[#27272A] px-3.5 py-2 text-xs text-[#F5F5F5] placeholder-[#71717A] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-colors"
+            />
+          </div>
+
+          {/* Products Table */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]"></div>
+            </div>
+          ) : (
+            <ProductTable products={filteredProducts} onDelete={handleDelete} />
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );

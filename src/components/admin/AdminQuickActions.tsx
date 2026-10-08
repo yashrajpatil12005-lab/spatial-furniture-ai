@@ -8,9 +8,8 @@ export default function AdminQuickActions() {
       title: 'Manage Products',
       description: 'View full product inventory, edit listings, and manage stock',
       href: '/retailer/products',
-      primary: true,
       icon: (
-        <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
         </svg>
       ),
@@ -19,9 +18,8 @@ export default function AdminQuickActions() {
       title: 'Add New Product',
       description: 'Create a new catalog item with dimensions & 3D attributes',
       href: '/retailer/products/new',
-      primary: false,
       icon: (
-        <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       ),
@@ -30,9 +28,8 @@ export default function AdminQuickActions() {
       title: 'Customer Catalog',
       description: 'Experience customer product discovery and AI visualizer',
       href: '/customer/products',
-      primary: false,
       icon: (
-        <svg className="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
@@ -42,9 +39,8 @@ export default function AdminQuickActions() {
       title: 'Retailer Dashboard',
       description: 'Navigate to retail analytics and partner overview',
       href: '/retailer',
-      primary: false,
       icon: (
-        <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
@@ -53,9 +49,8 @@ export default function AdminQuickActions() {
       title: 'Customer Portal',
       description: 'Visit customer landing view and discovery recommendations',
       href: '/customer',
-      primary: false,
       icon: (
-        <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
@@ -63,33 +58,33 @@ export default function AdminQuickActions() {
   ];
 
   return (
-    <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-6 shadow-sm">
-      <div className="pb-4 border-b border-slate-800">
-        <h2 className="text-lg font-semibold text-white">Quick Actions</h2>
-        <p className="text-xs text-slate-400 mt-0.5">
-          Fast portal navigation for administrative workflows and cross-role testing
+    <div className="rounded-xl bg-[#141414] border border-[#27272A] p-6 shadow-sm">
+      <div className="pb-4 border-b border-[#27272A]">
+        <h2 className="text-base font-bold text-[#F5F5F5]">Quick Actions</h2>
+        <p className="text-xs text-[#71717A] mt-0.5">
+          Fast portal navigation for administrative workflows and cross-role verification
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mt-6">
         {actions.map((act) => (
           <Link
             key={act.title}
             href={act.href}
-            className="group flex flex-col justify-between p-4 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/70 transition-all"
+            className="group flex flex-col justify-between p-4 rounded-xl bg-[#0A0A0A] border border-[#27272A] hover:border-[#10B981]/50 hover:bg-[#111] transition-all"
           >
             <div>
-              <div className="p-2 rounded-lg bg-slate-800/80 w-fit border border-slate-700/60 group-hover:border-emerald-500/30 transition-colors">
+              <div className="p-2 rounded-lg bg-[#141414] w-fit border border-[#27272A] group-hover:border-[#10B981]/30 transition-colors">
                 {act.icon}
               </div>
-              <h3 className="text-sm font-semibold text-white mt-3 group-hover:text-emerald-400 transition-colors">
+              <h3 className="text-xs font-bold text-[#F5F5F5] mt-3 group-hover:text-[#10B981] transition-colors">
                 {act.title}
               </h3>
-              <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+              <p className="text-[11px] text-[#71717A] mt-1 line-clamp-2 leading-relaxed">
                 {act.description}
               </p>
             </div>
-            <span className="mt-4 text-xs font-medium text-emerald-400 inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            <span className="mt-4 text-[11px] font-semibold text-[#10B981] inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Open &rarr;
             </span>
           </Link>

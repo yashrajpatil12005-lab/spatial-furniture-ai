@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { Product } from '@/lib/types';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { RecommendationPreferences, RecommendationResult } from '@/lib/ai/recommendations';
+import { formatPrice } from '@/lib/utils/currency';
 
 interface RecommendationPanelProps {
-  roomAnalysis?: string; // Optional context from Phase 4.4
+  roomAnalysis?: string;
 }
 
 export default function RecommendationPanel({ roomAnalysis }: RecommendationPanelProps) {
@@ -44,7 +45,7 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
 
   const handleGetRecommendations = async () => {
     if (!user) {
-      setError('You must be logged in to use AI recommendations.');
+      setError('Please sign in to access personalized AI recommendations.');
       return;
     }
 
@@ -66,7 +67,7 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to get recommendations.');
+        throw new Error(data.error || 'Failed to retrieve recommendations.');
       }
 
       setRecommendations(data.recommendations || []);
@@ -74,7 +75,7 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
       setAiFailed(data.aiFailed === true);
 
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.message || 'An error occurred during AI recommendation generation.');
       setAiFailed(true);
     } finally {
       setIsLoading(false);
@@ -86,28 +87,36 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
   };
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-sm mb-10">
-      <h2 className="text-xl font-bold text-neutral-900 mb-6 flex items-center">
-        <span className="bg-emerald-100 text-emerald-700 p-1 rounded-md mr-2">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+    <div className="bg-[#141414] border border-[#27272A] rounded-2xl p-6 sm:p-8 shadow-xl mb-10">
+      <div className="flex items-center justify-between pb-4 border-b border-[#27272A] mb-6">
+        <div className="flex items-center gap-2.5">
+          <span className="p-1.5 rounded-lg bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-[#F5F5F5]">AI Furniture Recommendations</h2>
+            <p className="text-xs text-[#71717A] mt-0.5">Gemini 2.5 generative reasoning tailored to your floorplan aesthetic</p>
+          </div>
+        </div>
+        <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/10 px-2.5 py-1 rounded-full border border-[#10B981]/30 hidden sm:inline-block">
+          Personalized
         </span>
-        AI Furniture Recommendations
-      </h2>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Preference Form */}
         <div className="lg:col-span-1 space-y-4">
-          <p className="text-sm text-neutral-600 mb-2">Tell us what you're looking for to get personalized suggestions.</p>
+          <p className="text-xs text-[#A1A1AA]">Define your room criteria to receive curated suggestions.</p>
           
           <div>
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1">Room Type</label>
+            <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Room Type</label>
             <select 
               value={preferences.roomType}
               onChange={(e) => setPreferences({...preferences, roomType: e.target.value})}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-neutral-900"
+              className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#27272A] rounded-lg text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] transition-colors"
             >
               <option>Any</option>
               <option>Living Room</option>
@@ -118,11 +127,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1">Style</label>
+            <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Style</label>
             <select 
               value={preferences.style}
               onChange={(e) => setPreferences({...preferences, style: e.target.value})}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-neutral-900"
+              className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#27272A] rounded-lg text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] transition-colors"
             >
               <option>Any</option>
               <option>Modern</option>
@@ -133,53 +142,51 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
             </select>
           </div>
 
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1">Min Budget</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Min Budget (₹)</label>
               <input 
                 type="number"
                 value={preferences.minPrice}
                 onChange={(e) => setPreferences({...preferences, minPrice: Number(e.target.value)})}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-neutral-900 [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#27272A] rounded-lg text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               />
             </div>
-            <div className="w-1/2">
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1">Max Budget</label>
+            <div>
+              <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Max Budget (₹)</label>
               <input 
                 type="number"
                 value={preferences.maxPrice}
                 onChange={(e) => setPreferences({...preferences, maxPrice: Number(e.target.value)})}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-neutral-900 [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#27272A] rounded-lg text-xs text-[#F5F5F5] focus:outline-none focus:border-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1">Additional Notes</label>
+            <label className="block text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Additional Notes</label>
             <textarea 
               value={preferences.additionalNotes}
               onChange={(e) => setPreferences({...preferences, additionalNotes: e.target.value})}
-              placeholder="E.g. Need a comfortable sofa for 3 people..."
+              placeholder="e.g. Need comfortable seating for 4, soft textures..."
               rows={2}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-neutral-900"
+              className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#27272A] rounded-lg text-xs text-[#F5F5F5] placeholder-[#71717A] focus:outline-none focus:border-[#10B981]"
             />
           </div>
 
           <button
             onClick={handleGetRecommendations}
             disabled={isLoading}
-            className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors mt-4
-              ${isLoading ? 'bg-emerald-400 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'}`}
+            className={`w-full flex justify-center py-2.5 px-4 rounded-lg text-xs font-semibold text-white transition-all mt-3
+              ${isLoading ? 'bg-[#10B981]/50 cursor-wait' : 'bg-[#10B981] hover:bg-[#059669]'}`}
           >
-            {isLoading ? 'Getting Recommendations...' : 'Get AI Recommendations'}
+            {isLoading ? 'Synthesizing with Gemini...' : 'Get AI Recommendations'}
           </button>
 
           {hasStoredAnalysis && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-700 flex items-start gap-2">
-              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Using your existing AI Room Analysis for better recommendations.</span>
+            <div className="mt-3 p-3 bg-[#0A0A0A] border border-[#10B981]/30 rounded-lg text-[11px] text-[#A1A1AA] flex items-start gap-2">
+              <span className="text-[#10B981] text-xs">●</span>
+              <span>Leveraging your prior AI Room Analysis for context-aware scoring.</span>
             </div>
           )}
         </div>
@@ -187,21 +194,24 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
         {/* Results Area */}
         <div className="lg:col-span-2">
           {!hasSearched ? (
-            <div className="h-full min-h-[300px] border-2 border-dashed border-neutral-200 rounded-xl flex items-center justify-center bg-neutral-50 text-neutral-500 text-sm">
-              Set your preferences and click "Get AI Recommendations".
+            <div className="h-full min-h-[260px] border border-dashed border-[#27272A] rounded-xl flex flex-col items-center justify-center bg-[#0A0A0A] text-[#71717A] text-xs p-6 text-center">
+              <svg className="w-8 h-8 text-[#71717A] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              <span>Set your style preferences and click &quot;Get AI Recommendations&quot;.</span>
             </div>
           ) : (
             <div className="space-y-4">
               {error && (
-                 <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-100 mb-4">
-                   {error}
-                 </div>
+                <div className="p-3 bg-red-500/10 border border-red-500/30 text-xs text-red-400 rounded-lg">
+                  {error}
+                </div>
               )}
               
               {aiFailed && !error && (
-                 <div className="p-3 bg-amber-50 text-amber-800 text-sm rounded-md border border-amber-200 mb-4">
-                   AI reasoning is temporarily unavailable. Showing fallback products matching your criteria instead.
-                 </div>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-400 rounded-lg">
+                  AI reasoning service is currently using deterministic fallback results matching your criteria.
+                </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -210,69 +220,70 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
                   const product = getProductById(rec.productId);
                   if (!product) return null;
                   return (
-                    <div key={rec.productId} className="border border-emerald-200 rounded-xl bg-emerald-50/30 overflow-hidden shadow-sm flex flex-col h-full">
-                      <div className="h-40 bg-neutral-200 relative">
+                    <div key={rec.productId} className="border border-[#10B981]/40 rounded-xl bg-[#181818] overflow-hidden shadow-sm flex flex-col h-full hover:border-[#10B981] transition-colors">
+                      <div className="h-36 bg-[#0A0A0A] relative border-b border-[#27272A]">
                         {product.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs uppercase">No Image</div>
+                          <div className="w-full h-full flex items-center justify-center text-[#71717A] text-[10px]">No Image</div>
                         )}
-                        <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                        <div className="absolute top-2 right-2 bg-[#10B981] text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
                           {rec.score}% Match
                         </div>
                       </div>
-                      <div className="p-4 flex-grow flex flex-col">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-base font-bold text-neutral-900 leading-tight">{product.name}</h3>
-                        </div>
-                        <p className="text-sm font-semibold text-emerald-700 mb-3">₹{product.price.toLocaleString()}</p>
-                        
-                        <div className="bg-white p-3 rounded-lg border border-emerald-100 text-sm text-neutral-600 italic mb-4 flex-grow">
-                          "{rec.reason}"
+                      <div className="p-4 flex-grow flex flex-col justify-between space-y-3">
+                        <div>
+                          <h3 className="text-xs font-bold text-[#F5F5F5] line-clamp-1">{product.name}</h3>
+                          <p className="text-xs font-bold text-[#10B981] mt-1">{formatPrice(product.price)}</p>
+                          <div className="mt-2 bg-[#0A0A0A] p-2.5 rounded-lg border border-[#27272A] text-[11px] text-[#A1A1AA] italic">
+                            &ldquo;{rec.reason}&rdquo;
+                          </div>
                         </div>
                         
                         <Link 
                           href={`/customer/products/${product.id}`}
-                          className="w-full text-center px-4 py-2 bg-white border border-emerald-600 text-emerald-700 text-sm font-medium rounded-md hover:bg-emerald-50 transition-colors"
+                          className="w-full text-center py-2 px-3 bg-[#10B981]/10 hover:bg-[#10B981] text-[#10B981] hover:text-white border border-[#10B981]/30 hover:border-transparent text-xs font-semibold rounded-lg transition-colors"
                         >
-                          View & Customize
+                          View &amp; Customize &rarr;
                         </Link>
                       </div>
                     </div>
                   );
                 })}
 
-                {/* Fallback Products when AI fails or no AI recommendations were returned */}
+                {/* Fallback Products */}
                 {(aiFailed || recommendations.length === 0) && fallbackProducts.length > 0 && fallbackProducts.map(product => (
-                  <div key={product.id} className="border border-neutral-200 rounded-xl bg-white overflow-hidden shadow-sm flex flex-col h-full">
-                    <div className="h-40 bg-neutral-200 relative">
+                  <div key={product.id} className="border border-[#27272A] rounded-xl bg-[#181818] overflow-hidden shadow-sm flex flex-col h-full">
+                    <div className="h-36 bg-[#0A0A0A] relative border-b border-[#27272A]">
                       {product.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs uppercase">No Image</div>
+                        <div className="w-full h-full flex items-center justify-center text-[#71717A] text-[10px]">No Image</div>
                       )}
                     </div>
-                    <div className="p-4 flex-grow flex flex-col">
-                      <h3 className="text-base font-bold text-neutral-900 mb-1 leading-tight">{product.name}</h3>
-                      <p className="text-sm text-neutral-500 mb-2">{product.category} • {product.style}</p>
-                      <p className="text-sm font-semibold text-emerald-700 mb-4">₹{product.price.toLocaleString()}</p>
-                      
-                      <div className="mt-auto">
-                        <Link 
-                          href={`/customer/products/${product.id}`}
-                          className="w-full text-center block px-4 py-2 bg-neutral-100 border border-transparent text-neutral-700 text-sm font-medium rounded-md hover:bg-neutral-200 transition-colors"
-                        >
-                          View Details
-                        </Link>
+                    <div className="p-4 flex-grow flex flex-col justify-between space-y-3">
+                      <div>
+                        <h3 className="text-xs font-bold text-[#F5F5F5] line-clamp-1">{product.name}</h3>
+                        <p className="text-[11px] text-[#71717A] mt-0.5">{product.category} &bull; {product.style}</p>
+                        <p className="text-xs font-bold text-[#F5F5F5] mt-1">{formatPrice(product.price)}</p>
                       </div>
+                      
+                      <Link 
+                        href={`/customer/products/${product.id}`}
+                        className="w-full text-center py-2 px-3 bg-[#141414] hover:bg-[#202020] border border-[#27272A] text-xs font-semibold text-[#F5F5F5] rounded-lg transition-colors"
+                      >
+                        View Details
+                      </Link>
                     </div>
                   </div>
                 ))}
 
                 {/* Empty State */}
                 {recommendations.length === 0 && fallbackProducts.length === 0 && !isLoading && (
-                  <div className="col-span-full border-2 border-dashed border-neutral-200 rounded-xl p-8 text-center bg-neutral-50 text-neutral-500 text-sm">
-                    No matching products found for your criteria. Try expanding your search.
+                  <div className="col-span-full border border-dashed border-[#27272A] rounded-xl p-8 text-center bg-[#0A0A0A] text-[#71717A] text-xs">
+                    No matching products found. Try adjusting your style filters or budget.
                   </div>
                 )}
               </div>

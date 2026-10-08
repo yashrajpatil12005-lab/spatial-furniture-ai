@@ -5,6 +5,7 @@ import ProductForm from '@/components/products/ProductForm';
 import { useEffect, useState, use } from 'react';
 import { getProduct } from '@/lib/products';
 import { Product } from '@/lib/types';
+import Link from 'next/link';
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -32,15 +33,33 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   return (
     <ProtectedRoute allowedRoles={['retailer', 'admin']}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-neutral-900">Edit Product</h1>
-          <p className="mt-1 text-sm text-neutral-500">Modify your existing furniture product.</p>
+      <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="pb-4 border-b border-[#27272A]">
+            <Link href="/retailer/products" className="text-xs text-[#A1A1AA] hover:text-[#F5F5F5] flex items-center gap-1 mb-2">
+              <span>&larr;</span>
+              <span>Back to Products</span>
+            </Link>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#F5F5F5]">
+              Edit <span className="text-[#10B981]">Product</span>
+            </h1>
+            <p className="mt-1 text-xs text-[#A1A1AA]">
+              Modify inventory quantity, physical dimensions, or media attributes.
+            </p>
+          </div>
+          
+          {loading && (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]"></div>
+            </div>
+          )}
+          {error && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+              {error}
+            </div>
+          )}
+          {!loading && !error && product && <ProductForm initialData={product} />}
         </div>
-        
-        {loading && <p>Loading product...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {!loading && !error && product && <ProductForm initialData={product} />}
       </div>
     </ProtectedRoute>
   );
