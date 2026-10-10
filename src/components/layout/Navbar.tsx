@@ -27,7 +27,11 @@ export default function Navbar() {
     };
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
   }, []);
 
   // Close menus on route changes
@@ -83,14 +87,87 @@ export default function Navbar() {
   };
 
   const isActive = (href: string) => {
+    const hashIndex = href.indexOf('#');
+    const targetPath = hashIndex !== -1 ? href.slice(0, hashIndex) : href;
+    const targetHash = hashIndex !== -1 ? href.slice(hashIndex) : '';
+
+    // 1. Links with a hash target (e.g., /customer/products#room-visualizer, /#how-it-works, /admin#platform-health)
+    if (targetHash) {
+      if (targetHash === '#room-visualizer') {
+        const isVisualizerDedicatedRoute =
+          pathname === '/customer/visualizer' ||
+          pathname.startsWith('/customer/visualizer/') ||
+          pathname === '/visualizer' ||
+          pathname.startsWith('/visualizer/');
+        return (pathname === targetPath && currentHash === '#room-visualizer') || isVisualizerDedicatedRoute;
+      }
+      return pathname === targetPath && currentHash === targetHash;
+    }
+
+    // 2. If current URL has a hash, and another navigation link explicitly targets that hash on the current pathname,
+    // prevent the unhashed base link from being highlighted simultaneously
+    if (currentHash) {
+      const hasSpecificHashLink = currentNavLinks.some(
+        (link) => link.href === `${targetPath}${currentHash}`
+      );
+      if (hasSpecificHashLink) {
+        return false;
+      }
+    }
+
+    // 3. Exact match for public root '/'
     if (href === '/') {
       return pathname === '/' && !currentHash;
     }
-    if (href.startsWith('/#')) {
-      const targetHash = href.substring(1);
-      return pathname === '/' && currentHash === targetHash;
+
+    // 4. Exact match for Customer Dashboard '/customer'
+    // Highlighted ONLY on the actual customer dashboard route, never on /customer/products or subroutes
+    if (href === '/customer') {
+      return pathname === '/customer';
     }
-    return pathname.startsWith(href);
+
+    // 5. Exact match for Retailer Dashboard '/retailer'
+    if (href === '/retailer') {
+      return pathname === '/retailer';
+    }
+
+    // 6. Exact match for Admin Overview '/admin'
+    if (href === '/admin') {
+      return pathname === '/admin' && currentHash !== '#platform-health';
+    }
+
+    // 7. Exact match for Add Product '/retailer/products/new'
+    if (href === '/retailer/products/new') {
+      return pathname === '/retailer/products/new';
+    }
+
+    // 8. Manage Products '/retailer/products'
+    // Matches /retailer/products and subroutes like /retailer/products/[id]/edit,
+    // but not /retailer/products/new which has its own link
+    if (href === '/retailer/products') {
+      if (pathname === '/retailer/products') return true;
+      if (pathname.startsWith('/retailer/products/') && pathname !== '/retailer/products/new') return true;
+      return false;
+    }
+
+    // 9. Furniture Catalog '/customer/products'
+    // Active on /customer/products (when hash is not #room-visualizer)
+    // and on nested routes like /customer/products/[id]
+    if (href === '/customer/products') {
+      if (currentHash === '#room-visualizer') return false;
+      return (
+        pathname === '/customer/products' ||
+        (pathname.startsWith('/customer/products/') && !pathname.includes('visualizer'))
+      );
+    }
+
+    // 10. Contact '/contact'
+    if (href === '/contact') {
+      return pathname === '/contact';
+    }
+
+    // Fallback: exact match
+    return pathname === href;
   };
 
   // Determine current role navigation configuration
@@ -175,6 +252,7 @@ export default function Navbar() {
             <Link
               href="/"
               id="brand-logo-link"
+              onClick={() => setCurrentHash('')}
               className="group flex items-center gap-2.5 transition-opacity hover:opacity-95"
               aria-label="Spatial AI Home"
             >
@@ -204,6 +282,13 @@ export default function Navbar() {
                     key={`desktop-nav-${link.label}-${link.href}`}
                     href={link.href}
                     id={`nav-link-${link.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                    onClick={() => {
+                      if (link.href.includes('#')) {
+                        setCurrentHash(link.href.substring(link.href.indexOf('#')));
+                      } else {
+                        setCurrentHash('');
+                      }
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? 'text-[#047857] bg-[#ECFDF5] font-semibold border border-[#A7F3D0]/70 shadow-2xs'
@@ -485,7 +570,14 @@ export default function Navbar() {
                 <Link
                   key={`mobile-nav-${link.label}-${link.href}`}
                   href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (link.href.includes('#')) {
+                      setCurrentHash(link.href.substring(link.href.indexOf('#')));
+                    } else {
+                      setCurrentHash('');
+                    }
+                  }}
                   className={`block px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
                       ? 'text-[#047857] bg-[#ECFDF5] font-semibold border border-[#A7F3D0]/70'
