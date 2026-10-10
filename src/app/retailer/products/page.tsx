@@ -9,16 +9,16 @@ import ProductTable from '@/components/products/ProductTable';
 import Link from 'next/link';
 
 export default function RetailerProductsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       fetchProducts();
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   const fetchProducts = async () => {
     try {

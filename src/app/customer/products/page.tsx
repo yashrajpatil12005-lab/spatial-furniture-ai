@@ -2,18 +2,22 @@
 
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import { Product } from '@/lib/types';
 import { getProducts } from '@/lib/products';
 import CustomerProductDiscovery from '@/components/products/CustomerProductDiscovery';
 import RecommendationPanel from '@/components/ai/RecommendationPanel';
 
 export default function CustomerProductsPage() {
+  const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (!authLoading && user) {
+      fetchProducts();
+    }
+  }, [authLoading, user]);
 
   const fetchProducts = async () => {
     try {
@@ -41,8 +45,10 @@ export default function CustomerProductsPage() {
             </p>
           </div>
 
-          {/* AI Recommendation Engine */}
-          <RecommendationPanel />
+          {/* AI Recommendation Engine / Room Visualizer Guide */}
+          <div id="room-visualizer" className="scroll-mt-20">
+            <RecommendationPanel />
+          </div>
 
           {/* Product Discovery & Catalog */}
           {loading ? (

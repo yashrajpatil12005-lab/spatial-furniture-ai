@@ -9,15 +9,15 @@ import { getRetailerProducts } from '@/lib/products';
 import { Product } from '@/lib/types';
 
 export default function RetailerDashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       getRetailerProducts(user.uid).then(setProducts).catch(console.error);
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   const totalProducts = products.length;
   const totalStock = products.reduce((acc, curr) => acc + (curr.stock || 0), 0);

@@ -21,7 +21,7 @@ interface IntegrationsState {
 }
 
 export default function AdminPage() {
-  const { userData, user } = useAuth();
+  const { userData, user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [integrations, setIntegrations] = useState<IntegrationsState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,10 +68,10 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       fetchData();
     }
-  }, [user, fetchData]);
+  }, [authLoading, user, fetchData]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -177,7 +177,9 @@ export default function AdminPage() {
               <AdminRecentProducts products={products} />
 
               {/* SYSTEM INTEGRATIONS STATUS */}
-              <AdminIntegrationStatus status={integrations} loading={loading} />
+              <div id="platform-health" className="scroll-mt-20">
+                <AdminIntegrationStatus status={integrations} loading={loading} />
+              </div>
 
               {/* ADMIN PROFILE & CREDENTIALS */}
               <AdminProfile />

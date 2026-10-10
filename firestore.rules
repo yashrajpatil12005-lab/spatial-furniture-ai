@@ -14,10 +14,16 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'retailer';
     }
 
+    // Helper function to check if the user is an admin by reading their user document
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // Match the users collection
     match /users/{userId} {
-      // Allow read if the user is authenticated and is reading their own document
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Allow read if the user is authenticated and is reading their own document, or if user is admin
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
 
       // Allow create if the user is authenticated, creating their own document,
       // and the role is explicitly set to "customer". 
@@ -41,13 +47,11 @@ service cloud.firestore {
       // Allow any authenticated user (customer, retailer, admin) to read products
       allow read: if isAuthenticated();
       
-      // Allow creation only if the user is a retailer and the retailerId matches their uid
-      allow create: if isRetailer() 
-                    && request.resource.data.retailerId == request.auth.uid;
+      // Allow creation only if the user is a retailer and the retailerId matches their uid, or if user is admin
+      allow create: if (isRetailer() && request.resource.data.retailerId == request.auth.uid) || isAdmin();
                     
-      // Allow update and delete only if the user is a retailer and they own the product
-      allow update, delete: if isRetailer() 
-                            && resource.data.retailerId == request.auth.uid;
+      // Allow update and delete only if the user is a retailer and they own the product, or if user is admin
+      allow update, delete: if (isRetailer() && resource.data.retailerId == request.auth.uid) || isAdmin();
     }
   }
 }

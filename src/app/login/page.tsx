@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { loginUser } from '@/lib/firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -18,8 +20,26 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      await loginUser(email, password);
-      router.push('/customer');
+      const userCredential = await loginUser(email, password);
+      
+      try {
+        const docRef = doc(db, 'users', userCredential.user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const role = docSnap.data().role;
+          if (role === 'retailer') {
+            router.push('/retailer');
+          } else if (role === 'admin') {
+            router.push('/admin');
+          } else {
+            router.push('/customer');
+          }
+        } else {
+          router.push('/customer');
+        }
+      } catch {
+        router.push('/customer');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to login');
     } finally {

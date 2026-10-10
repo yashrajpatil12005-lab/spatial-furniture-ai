@@ -1,6 +1,7 @@
 'use client';
 
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import ProductForm from '@/components/products/ProductForm';
 import { useEffect, useState, use } from 'react';
 import { getProduct } from '@/lib/products';
@@ -9,6 +10,7 @@ import Link from 'next/link';
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const { user, loading: authLoading } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,8 +30,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setLoading(false);
       }
     };
-    fetchProduct();
-  }, [resolvedParams.id]);
+
+    if (!authLoading && user) {
+      fetchProduct();
+    }
+  }, [resolvedParams.id, authLoading, user]);
 
   return (
     <ProtectedRoute allowedRoles={['retailer', 'admin']}>

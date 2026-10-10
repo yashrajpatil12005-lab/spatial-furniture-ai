@@ -1,8 +1,9 @@
 import { createProduct } from './index';
 import { Product } from '../types';
 
-const DEMO_PRODUCTS = [
+export const DEMO_PRODUCTS: Product[] = [
   {
+    id: 'demo-sofa-1',
     name: 'Modern 3-Seater Sofa',
     category: 'Sofa',
     description: 'A sleek, modern 3-seater sofa with premium fabric and minimalist design.',
@@ -17,8 +18,12 @@ const DEMO_PRODUCTS = [
     stock: 12,
     imageUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800',
     model3dUrl: '',
+    retailerId: 'demo-retailer',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
   },
   {
+    id: 'demo-chair-2',
     name: 'Scandinavian Lounge Chair',
     category: 'Chair',
     description: 'Ergonomic scandinavian lounge chair perfect for reading corners.',
@@ -33,8 +38,12 @@ const DEMO_PRODUCTS = [
     stock: 5,
     imageUrl: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&q=80&w=800',
     model3dUrl: '',
+    retailerId: 'demo-retailer',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
   },
   {
+    id: 'demo-bed-3',
     name: 'King Size Wooden Bed',
     category: 'Bed',
     description: 'Solid oak king size bed frame with headboard.',
@@ -49,8 +58,12 @@ const DEMO_PRODUCTS = [
     stock: 3,
     imageUrl: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=800',
     model3dUrl: '',
+    retailerId: 'demo-retailer',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
   },
   {
+    id: 'demo-desk-4',
     name: 'Minimal Study Table',
     category: 'Study Table',
     description: 'Clean minimal study desk with hidden cable management.',
@@ -65,8 +78,12 @@ const DEMO_PRODUCTS = [
     stock: 20,
     imageUrl: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&q=80&w=800',
     model3dUrl: '',
+    retailerId: 'demo-retailer',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
   },
   {
+    id: 'demo-dining-5',
     name: '6-Seater Dining Table',
     category: 'Dining Table',
     description: 'Spacious 6-seater dining table perfect for family gatherings.',
@@ -81,13 +98,16 @@ const DEMO_PRODUCTS = [
     stock: 8,
     imageUrl: 'https://images.unsplash.com/photo-1604578762246-41134e37f9cc?auto=format&fit=crop&q=80&w=800',
     model3dUrl: '',
+    retailerId: 'demo-retailer',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
   }
 ];
 
 export const seedDemoProducts = async (retailerId: string) => {
   console.log("Seeding demo products for retailer:", retailerId);
   try {
-    const promises = DEMO_PRODUCTS.map(product => 
+    const promises = DEMO_PRODUCTS.map(({ id, createdAt, updatedAt, ...product }) => 
       createProduct({ ...product, retailerId })
     );
     await Promise.all(promises);

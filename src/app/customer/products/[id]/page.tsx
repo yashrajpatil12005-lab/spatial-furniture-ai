@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
 import { useEffect, useState, use } from 'react';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import { Product, FurnitureCustomization } from '@/lib/types';
 import { getProduct } from '@/lib/products';
 import { formatPrice } from '@/lib/utils/currency';
@@ -11,6 +12,7 @@ import VisualizationPanel from '@/components/ai/VisualizationPanel';
 
 export default function CustomerProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const { user, loading: authLoading } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,8 +35,11 @@ export default function CustomerProductDetailPage({ params }: { params: Promise<
         setLoading(false);
       }
     };
-    fetchProduct();
-  }, [resolvedParams.id]);
+
+    if (!authLoading && user) {
+      fetchProduct();
+    }
+  }, [resolvedParams.id, authLoading, user]);
 
   const handleFutureFeature = (featureName: string) => {
     alert(`${featureName} will be available in the upcoming Spatial Computing release.`);
