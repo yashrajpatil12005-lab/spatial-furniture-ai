@@ -140,6 +140,7 @@ export default function ContactPage() {
                       id="name"
                       type="text"
                       required
+                      maxLength={50}
                       placeholder="Jane Doe"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}

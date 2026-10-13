@@ -5,6 +5,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
+import { normalizeFullName } from '@/lib/utils/validation';
 
 // 1. Register with email/password
 export const registerUser = async (email: string, password: string, name: string) => {
@@ -13,12 +14,13 @@ export const registerUser = async (email: string, password: string, name: string
     const user = userCredential.user;
 
     const now = new Date().toISOString();
+    const normalizedName = normalizeFullName(name);
 
     // 2. Create a user data structure in Firestore
     // SECURITY REQUIREMENT: role must always be "customer"
     const userData = {
       uid: user.uid,
-      name,
+      name: normalizedName,
       email,
       role: 'customer',
       createdAt: now,
@@ -28,8 +30,9 @@ export const registerUser = async (email: string, password: string, name: string
     await setDoc(doc(db, 'users', user.uid), userData);
 
     return userCredential;
-  } catch (error) {
-    console.error("Error registering user:", error);
+  } catch (error: unknown) {
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
+    console.error("Error registering user with code:", errorCode);
     throw error;
   }
 };
@@ -39,8 +42,9 @@ export const loginUser = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential;
-  } catch (error) {
-    console.error("Error logging in:", error);
+  } catch (error: unknown) {
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
+    console.error("Error logging in with code:", errorCode);
     throw error;
   }
 };
