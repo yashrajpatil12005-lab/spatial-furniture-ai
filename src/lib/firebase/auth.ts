@@ -7,8 +7,15 @@ import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import { normalizeFullName } from '@/lib/utils/validation';
 
+export type AllowedRegistrationRole = 'customer' | 'retailer';
+
 // 1. Register with email/password
-export const registerUser = async (email: string, password: string, name: string) => {
+export const registerUser = async (
+  email: string, 
+  password: string, 
+  name: string,
+  role: AllowedRegistrationRole = 'customer'
+) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -16,13 +23,15 @@ export const registerUser = async (email: string, password: string, name: string
     const now = new Date().toISOString();
     const normalizedName = normalizeFullName(name);
 
+    // SECURITY: strictly whitelist role to 'customer' or 'retailer'. Admin cannot be self-assigned.
+    const safeRole: AllowedRegistrationRole = role === 'retailer' ? 'retailer' : 'customer';
+
     // 2. Create a user data structure in Firestore
-    // SECURITY REQUIREMENT: role must always be "customer"
     const userData = {
       uid: user.uid,
       name: normalizedName,
       email,
-      role: 'customer',
+      role: safeRole,
       createdAt: now,
       updatedAt: now,
     };

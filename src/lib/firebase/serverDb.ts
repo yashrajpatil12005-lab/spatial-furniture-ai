@@ -22,21 +22,34 @@ export const fetchProductsFromServer = async (token: string): Promise<Product[]>
 
   const data = await res.json();
   
+interface FirestoreField {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  timestampValue?: string;
+}
+
+interface FirestoreRESTDocument {
+  name: string;
+  fields?: Record<string, FirestoreField>;
+}
+
   if (!data.documents) {
     return [];
   }
 
   // Parse Firestore REST API format to standard Product objects
-  return data.documents.map((doc: any) => {
+  return (data.documents as FirestoreRESTDocument[]).map((doc) => {
     const id = doc.name.split('/').pop();
-    const fields = doc.fields;
+    const fields = doc.fields || {};
     
     // Helper to extract value safely
-    const extract = (field: any) => {
+    const extract = (field?: FirestoreField) => {
       if (!field) return undefined;
       if (field.stringValue !== undefined) return field.stringValue;
       if (field.integerValue !== undefined) return parseInt(field.integerValue, 10);
-      if (field.doubleValue !== undefined) return parseFloat(field.doubleValue);
+      if (field.doubleValue !== undefined) return field.doubleValue;
       if (field.booleanValue !== undefined) return field.booleanValue;
       if (field.timestampValue !== undefined) return field.timestampValue;
       return null;

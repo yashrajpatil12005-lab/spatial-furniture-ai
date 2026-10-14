@@ -24,8 +24,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         } else {
           setError('Product not found.');
         }
-      } catch (err: any) {
-        setError(err.message || 'Error loading product.');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error loading product.';
+        setError(msg);
       } finally {
         setLoading(false);
       }

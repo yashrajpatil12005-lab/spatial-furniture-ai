@@ -12,6 +12,7 @@ export default function RetailerDashboard() {
   const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusNotice, setStatusNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -26,14 +27,15 @@ export default function RetailerDashboard() {
   const handleSeed = async () => {
     if (!user) return;
     setLoading(true);
+    setStatusNotice(null);
     try {
       await seedDemoProducts(user.uid);
       const data = await getRetailerProducts(user.uid);
       setProducts(data);
-      alert('Demo products seeded successfully!');
+      setStatusNotice({ type: 'success', message: 'Demo catalog products successfully seeded into your retailer inventory.' });
     } catch (error) {
-      alert('Error seeding products.');
       console.error(error);
+      setStatusNotice({ type: 'error', message: 'Failed to seed demo catalog. Please check your network or permissions.' });
     } finally {
       setLoading(false);
     }
@@ -64,6 +66,37 @@ export default function RetailerDashboard() {
               </Link>
             </div>
           </div>
+
+          {/* In-app Status Notice */}
+          {statusNotice && (
+            <div
+              className={`p-4 rounded-xl text-xs font-medium flex items-center justify-between shadow-xs animate-fadeIn ${
+                statusNotice.type === 'success'
+                  ? 'bg-[#F0FDF4] border border-[#A7F3D0] text-[#065F46]'
+                  : 'bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {statusNotice.type === 'success' ? (
+                  <svg className="w-4 h-4 text-[#10B981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-[#EF4444] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span>{statusNotice.message}</span>
+              </div>
+              <button
+                onClick={() => setStatusNotice(null)}
+                className="hover:opacity-75 p-1 font-bold text-sm"
+                aria-label="Dismiss notice"
+              >
+                &times;
+              </button>
+            </div>
+          )}
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">

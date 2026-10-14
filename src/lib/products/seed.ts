@@ -105,10 +105,26 @@ export const DEMO_PRODUCTS: Product[] = [
 ];
 
 export const seedDemoProducts = async (retailerId: string) => {
-  console.log("Seeding demo products for retailer:", retailerId);
   try {
-    const promises = DEMO_PRODUCTS.map(({ id, createdAt, updatedAt, ...product }) => 
-      createProduct({ ...product, retailerId })
+    console.log("Seeding demo products for retailer:", retailerId);
+    const promises = DEMO_PRODUCTS.map((demoItem) => 
+      createProduct({
+        name: demoItem.name,
+        category: demoItem.category,
+        description: demoItem.description,
+        price: demoItem.price,
+        brand: demoItem.brand,
+        material: demoItem.material,
+        color: demoItem.color,
+        style: demoItem.style,
+        width: demoItem.width,
+        height: demoItem.height,
+        depth: demoItem.depth,
+        stock: demoItem.stock,
+        imageUrl: demoItem.imageUrl,
+        model3dUrl: demoItem.model3dUrl,
+        retailerId,
+      })
     );
     await Promise.all(promises);
     return true;

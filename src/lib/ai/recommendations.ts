@@ -16,6 +16,9 @@ export interface RecommendationResult {
   productId: string;
   score: number;
   reason: string;
+  roomFitReason?: string;
+  harmonyHighlight?: string;
+  placementTip?: string;
 }
 
 export const generateRecommendations = async (
@@ -54,14 +57,14 @@ export const generateRecommendations = async (
     Budget: ${preferences.minPrice ? '₹' + preferences.minPrice : 'Any'} - ${preferences.maxPrice ? '₹' + preferences.maxPrice : 'Any'}
     Additional Notes: ${preferences.additionalNotes || 'None'}
     
-    ${preferences.roomAnalysis ? `EXISTING AI ROOM ANALYSIS:\n${preferences.roomAnalysis}` : ''}
+    ${preferences.roomAnalysis ? `EXISTING AI ROOM ANALYSIS & ARCHITECTURAL INSIGHTS:\n${preferences.roomAnalysis}` : ''}
     
     CANDIDATE PRODUCTS:
     ${JSON.stringify(productContext, null, 2)}
     
     TASK:
     Analyze the customer preferences (and the room analysis if provided) against the candidate products.
-    Select the top (up to 5) most suitable products. Do not recommend products that completely violate the constraints unless there are no better options, but strongly prioritize matching style, budget, and practical fit.
+    Select the top (up to 5) most suitable products. Strongly prioritize matching style, budget, and practical room fit.
     
     CRITICAL INSTRUCTION:
     Respond ONLY with valid JSON. Do not include markdown code blocks. The response must precisely match this format:
@@ -70,7 +73,10 @@ export const generateRecommendations = async (
         {
           "productId": "id_from_candidates",
           "score": 95,
-          "reason": "1-2 short sentences explaining why this fits."
+          "reason": "1-2 short sentences explaining why this piece fits the overall preference and room setting.",
+          "roomFitReason": "Specific architectural explanation of how this piece suits the room's geometry, lighting, or layout.",
+          "harmonyHighlight": "1 sentence on color/material synergy with the room.",
+          "placementTip": "1 practical placement suggestion for the space."
         }
       ]
     }
@@ -85,23 +91,38 @@ export const generateRecommendations = async (
     const responseText = response.text || '';
     
     // Clean up potential markdown formatting from Gemini
-    const cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    let cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+    }
     
     const data = JSON.parse(cleanedText);
     
     if (data && data.recommendations && Array.isArray(data.recommendations)) {
       // Validate that the returned IDs actually exist in our candidates
-      const validRecommendations = data.recommendations
-        .filter((rec: any) => candidates.some(c => c.id === rec.productId))
-        .slice(0, 5) as RecommendationResult[];
-        
-      return validRecommendations;
+      const validRecommendations: RecommendationResult[] = [];
+      for (const rec of data.recommendations) {
+        if (typeof rec.productId === 'string' && candidates.some(c => c.id === rec.productId)) {
+          validRecommendations.push({
+            productId: rec.productId,
+            score: typeof rec.score === 'number' ? Math.min(Math.max(Math.round(rec.score), 50), 99) : 85,
+            reason: typeof rec.reason === 'string' && rec.reason.trim() ? rec.reason.trim() : 'Matches your desired aesthetic and room proportions.',
+            roomFitReason: typeof rec.roomFitReason === 'string' && rec.roomFitReason.trim() ? rec.roomFitReason.trim() : undefined,
+            harmonyHighlight: typeof rec.harmonyHighlight === 'string' && rec.harmonyHighlight.trim() ? rec.harmonyHighlight.trim() : undefined,
+            placementTip: typeof rec.placementTip === 'string' && rec.placementTip.trim() ? rec.placementTip.trim() : undefined,
+          });
+        }
+      }
+      return validRecommendations.slice(0, 5);
     }
     
     return [];
 
-  } catch (error: any) {
-    console.error('Recommendation AI Error:', error.message || error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Recommendation AI Error:', errorMsg);
     throw new Error('AI recommendation generation failed.');
   }
 };

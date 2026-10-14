@@ -35,6 +35,8 @@ function ProductThumbnail({ src, alt }: { src?: string; alt: string }) {
 }
 
 export default function ProductTable({ products, onDelete }: ProductTableProps) {
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
   if (products.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-[#E2E8F0] p-8 card-shadow">
@@ -112,23 +114,42 @@ export default function ProductTable({ products, onDelete }: ProductTableProps) 
               <td className="px-3 py-3.5 whitespace-nowrap">
                 {getStockBadge(product.stock)}
               </td>
-              <td className="py-3.5 pl-3 pr-4 sm:pr-6 text-right whitespace-nowrap space-x-3">
-                <Link
-                  href={`/retailer/products/${product.id}/edit`}
-                  className="text-xs font-semibold text-[#047857] hover:text-[#059669] hover:underline"
-                >
-                  Edit
-                </Link>
-                <button 
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
-                      onDelete(product.id!);
-                    }
-                  }} 
-                  className="text-xs font-semibold text-[#EF4444] hover:text-[#DC2626] transition-colors"
-                >
-                  Delete
-                </button>
+              <td className="py-3.5 pl-3 pr-4 sm:pr-6 text-right whitespace-nowrap">
+                {confirmingId === product.id ? (
+                  <div className="inline-flex items-center gap-2 bg-[#FEF2F2] border border-[#FECACA] p-1.5 rounded-xl">
+                    <span className="text-[11px] text-[#991B1B] font-medium">Delete item?</span>
+                    <button
+                      onClick={() => {
+                        onDelete(product.id!);
+                        setConfirmingId(null);
+                      }}
+                      className="px-2 py-1 bg-[#EF4444] hover:bg-[#DC2626] text-white text-[10px] font-bold rounded-lg transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setConfirmingId(null)}
+                      className="px-2 py-1 bg-white hover:bg-slate-100 text-[#475569] text-[10px] font-semibold rounded-lg border border-[#CBD5E1] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-x-3">
+                    <Link
+                      href={`/retailer/products/${product.id}/edit`}
+                      className="text-xs font-semibold text-[#047857] hover:text-[#059669] hover:underline"
+                    >
+                      Edit
+                    </Link>
+                    <button 
+                      onClick={() => setConfirmingId(product.id!)}
+                      className="text-xs font-semibold text-[#EF4444] hover:text-[#DC2626] transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </td>
             </tr>
           ))}

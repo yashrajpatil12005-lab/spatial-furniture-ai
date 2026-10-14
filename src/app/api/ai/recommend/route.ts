@@ -69,8 +69,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-  } catch (error: any) {
-    console.error('Recommendation API Error:', error.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Recommendation API Error:', message);
     return NextResponse.json(
       { success: false, error: 'Failed to generate recommendations.' },
       { status: 500 }

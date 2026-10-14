@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { getProducts } from '@/lib/products';
@@ -27,55 +27,72 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setError(null);
-    try {
-      // 1. Fetch real product data from Firestore
-      const productsData = await getProducts();
-      setProducts(productsData || []);
-
-      // 2. Fetch server-side integration configuration status
-      try {
-        const res = await fetch('/api/admin/integrations');
-        if (res.ok) {
-          const intData = await res.json();
-          setIntegrations(intData);
-        } else {
-          setIntegrations({
-            firebase: 'Configured',
-            firestore: 'Connected',
-            gemini: 'Not configured',
-            spatialComputing: 'In Development',
-          });
-        }
-      } catch (intErr) {
-        console.warn('Could not fetch integration indicators:', intErr);
-        setIntegrations({
-          firebase: 'Configured',
-          firestore: 'Connected',
-          gemini: 'Not configured',
-          spatialComputing: 'In Development',
-        });
-      }
-    } catch (err: any) {
-      console.error('Error fetching admin dashboard data:', err);
-      setError(err?.message || 'Failed to load platform data from Firestore.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    let active = true;
+
     if (!authLoading && user) {
-      fetchData();
+      const load = async () => {
+        try {
+          // 1. Fetch real product data from Firestore
+          const productsData = await getProducts();
+          if (!active) return;
+          setProducts(productsData || []);
+
+          // 2. Fetch server-side integration configuration status with admin authorization
+          try {
+            const token = await user.getIdToken();
+            const res = await fetch('/api/admin/integrations', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!active) return;
+            if (res.ok) {
+              const intData = await res.json();
+              setIntegrations(intData);
+            } else {
+              setIntegrations({
+                firebase: 'Configured',
+                firestore: 'Connected',
+                gemini: 'Not configured',
+                spatialComputing: 'In Development',
+              });
+            }
+          } catch (intErr) {
+            if (!active) return;
+            console.warn('Could not fetch integration indicators:', intErr);
+            setIntegrations({
+              firebase: 'Configured',
+              firestore: 'Connected',
+              gemini: 'Not configured',
+              spatialComputing: 'In Development',
+            });
+          }
+        } catch (err: unknown) {
+          if (!active) return;
+          console.error('Error fetching admin dashboard data:', err);
+          const msg = err instanceof Error ? err.message : 'Failed to load platform data from Firestore.';
+          setError(msg);
+        } finally {
+          if (active) {
+            setLoading(false);
+            setRefreshing(false);
+          }
+        }
+      };
+
+      load();
     }
-  }, [authLoading, user, fetchData]);
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user, refreshTrigger]);
 
   const handleRefresh = () => {
+    setError(null);
     setRefreshing(true);
-    fetchData();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (

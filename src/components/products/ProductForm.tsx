@@ -59,8 +59,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         await createProduct({ ...formData, retailerId: user.uid });
       }
       router.push('/retailer/products');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while saving the furniture item.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred while saving the furniture item.';
+      setError(msg);
       setLoading(false);
     }
   };
@@ -84,10 +85,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-name" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Product Name *
             </label>
             <input
+              id="product-name"
               type="text"
               name="name"
               required
@@ -99,10 +101,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-category" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Category *
             </label>
             <select
+              id="product-category"
               name="category"
               required
               value={formData.category}
@@ -116,10 +119,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-description" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Description
             </label>
             <textarea
+              id="product-description"
               name="description"
               rows={3}
               value={formData.description}
@@ -142,10 +146,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-brand" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Brand / Manufacturer
             </label>
             <input
+              id="product-brand"
               type="text"
               name="brand"
               value={formData.brand}
@@ -156,10 +161,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-material" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Material
             </label>
             <input
+              id="product-material"
               type="text"
               name="material"
               value={formData.material}
@@ -170,10 +176,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-color" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Color
             </label>
             <input
+              id="product-color"
               type="text"
               name="color"
               value={formData.color}
@@ -184,10 +191,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-style" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Design Style
             </label>
             <input
+              id="product-style"
               type="text"
               name="style"
               value={formData.style}
@@ -210,10 +218,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-width" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Width (cm) *
             </label>
             <input
+              id="product-width"
               type="number"
               name="width"
               required
@@ -225,10 +234,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-height" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Height (cm) *
             </label>
             <input
+              id="product-height"
               type="number"
               name="height"
               required
@@ -240,10 +250,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-depth" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Depth (cm) *
             </label>
             <input
+              id="product-depth"
               type="number"
               name="depth"
               required
@@ -255,10 +266,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-stock" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Stock Quantity *
             </label>
             <input
+              id="product-stock"
               type="number"
               name="stock"
               required
@@ -270,10 +282,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-price" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Price (₹ INR) *
             </label>
             <input
+              id="product-price"
               type="number"
               name="price"
               required
@@ -299,10 +312,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-imageUrl" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               Image URL (Public HTTPS)
             </label>
             <input
+              id="product-imageUrl"
               type="url"
               name="imageUrl"
               value={formData.imageUrl}
@@ -313,10 +327,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+            <label htmlFor="product-model3dUrl" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
               3D Model URL (GLB / USDZ)
             </label>
             <input
+              id="product-model3dUrl"
               type="url"
               name="model3dUrl"
               value={formData.model3dUrl}

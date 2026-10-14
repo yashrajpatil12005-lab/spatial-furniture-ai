@@ -83,13 +83,13 @@ export const generateFurnitureInRoomImage = async (
       error: 'The AI model did not return a generated image.'
     };
 
-  } catch (error: any) {
-    console.error('Image Generation Error:', error.message || error);
+  } catch (error: unknown) {
+    const rawMsg = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Unknown API Error';
+    console.error('Image Generation Error:', rawMsg);
     
-    const errorMessage = error.message || 'Unknown API Error';
-    const safeErrorMessage = errorMessage.includes('GEMINI_API_KEY') || errorMessage.includes('API key')
+    const safeErrorMessage = rawMsg.includes('GEMINI_API_KEY') || rawMsg.includes('API key')
       ? 'Server misconfiguration: AI API is not properly configured.'
-      : errorMessage;
+      : rawMsg;
 
     throw new Error(safeErrorMessage);
   }

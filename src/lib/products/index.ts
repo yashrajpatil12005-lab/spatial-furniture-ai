@@ -8,8 +8,7 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  where,
-  orderBy
+  where
 } from 'firebase/firestore';
 import { Product } from '../types';
 
@@ -17,12 +16,10 @@ const PRODUCTS_COLLECTION = 'products';
 
 export const getProducts = async (categoryFilter?: string) => {
   try {
-    let q = collection(db, PRODUCTS_COLLECTION);
-    
-    if (categoryFilter && categoryFilter !== 'All') {
-      // @ts-ignore
-      q = query(collection(db, PRODUCTS_COLLECTION), where('category', '==', categoryFilter));
-    }
+    const productsRef = collection(db, PRODUCTS_COLLECTION);
+    const q = categoryFilter && categoryFilter !== 'All'
+      ? query(productsRef, where('category', '==', categoryFilter))
+      : query(productsRef);
     
     // We fetch all products (you might want to paginate in production)
     const snapshot = await getDocs(q);

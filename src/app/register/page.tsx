@@ -25,6 +25,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [role, setRole] = useState<'customer' | 'retailer'>('customer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -95,8 +96,12 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      await registerUser(email, password, normalizedName);
-      router.push('/customer');
+      await registerUser(email, password, normalizedName, role);
+      if (role === 'retailer') {
+        router.push('/retailer');
+      } else {
+        router.push('/customer');
+      }
     } catch (err: unknown) {
       let friendlyMessage = 'Failed to create account. Please try again.';
       if (err && typeof err === 'object' && 'code' in err) {
@@ -134,6 +139,38 @@ export default function RegisterPage() {
 
         <form className="mt-8 space-y-5" onSubmit={handleRegister} noValidate>
           <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
+                Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setRole('customer')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    role === 'customer'
+                      ? 'border-[#10B981] bg-[#ECFDF5] text-[#047857] ring-1 ring-[#10B981]'
+                      : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-slate-300'
+                  }`}
+                >
+                  <span className="block font-bold text-xs text-[#111827]">Customer</span>
+                  <span className="block text-[11px] text-[#64748B] mt-0.5">Explore &amp; visualize furniture</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('retailer')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    role === 'retailer'
+                      ? 'border-[#10B981] bg-[#ECFDF5] text-[#047857] ring-1 ring-[#10B981]'
+                      : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-slate-300'
+                  }`}
+                >
+                  <span className="block font-bold text-xs text-[#111827]">Retail Partner</span>
+                  <span className="block text-[11px] text-[#64748B] mt-0.5">Manage catalog &amp; stock</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="name" className="block text-xs font-semibold text-[#475569] uppercase tracking-wider">

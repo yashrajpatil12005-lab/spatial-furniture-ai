@@ -4,7 +4,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { logoutUser } from '@/lib/firebase/auth';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+
+const subscribeHash = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('hashchange', callback);
+  window.addEventListener('popstate', callback);
+  return () => {
+    window.removeEventListener('hashchange', callback);
+    window.removeEventListener('popstate', callback);
+  };
+};
+
+const getHashSnapshot = () => (typeof window !== 'undefined' ? window.location.hash : '');
+const getServerHashSnapshot = () => '';
 
 export default function Navbar() {
   const { user, userData, loading } = useAuth();
@@ -13,35 +26,18 @@ export default function Navbar() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [currentHash, setCurrentHash] = useState('');
+  const currentHash = useSyncExternalStore(subscribeHash, getHashSnapshot, getServerHashSnapshot);
 
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Track hash changes for active anchor navigation
-  useEffect(() => {
-    const handleHashChange = () => {
-      if (typeof window !== 'undefined') {
-        setCurrentHash(window.location.hash);
-      }
-    };
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    window.addEventListener('popstate', handleHashChange);
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-      window.removeEventListener('popstate', handleHashChange);
-    };
-  }, []);
-
-  // Close menus on route changes
-  useEffect(() => {
+  // Close menus on route changes by tracking previous pathname (React recommended pattern)
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setMobileMenuOpen(false);
     setAccountMenuOpen(false);
-    if (typeof window !== 'undefined') {
-      setCurrentHash(window.location.hash);
-    }
-  }, [pathname]);
+  }
 
   // Click outside to close account dropdown
   useEffect(() => {
@@ -252,7 +248,6 @@ export default function Navbar() {
             <Link
               href="/"
               id="brand-logo-link"
-              onClick={() => setCurrentHash('')}
               className="group flex items-center gap-2.5 transition-opacity hover:opacity-95"
               aria-label="Spatial AI Home"
             >
@@ -282,13 +277,6 @@ export default function Navbar() {
                     key={`desktop-nav-${link.label}-${link.href}`}
                     href={link.href}
                     id={`nav-link-${link.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                    onClick={() => {
-                      if (link.href.includes('#')) {
-                        setCurrentHash(link.href.substring(link.href.indexOf('#')));
-                      } else {
-                        setCurrentHash('');
-                      }
-                    }}
                     className={`px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
                       active
                         ? 'text-[#047857] bg-[#ECFDF5] font-semibold border border-[#A7F3D0]/70 shadow-2xs'
@@ -570,14 +558,7 @@ export default function Navbar() {
                 <Link
                   key={`mobile-nav-${link.label}-${link.href}`}
                   href={link.href}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    if (link.href.includes('#')) {
-                      setCurrentHash(link.href.substring(link.href.indexOf('#')));
-                    } else {
-                      setCurrentHash('');
-                    }
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                   className={`block px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
                       ? 'text-[#047857] bg-[#ECFDF5] font-semibold border border-[#A7F3D0]/70'

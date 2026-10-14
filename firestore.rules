@@ -26,11 +26,11 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
 
       // Allow create if the user is authenticated, creating their own document,
-      // and the role is explicitly set to "customer". 
-      // They cannot create a document for another user or assign themselves admin/retailer.
+      // and the role is explicitly "customer" or "retailer".
+      // They cannot create a document for another user or assign themselves admin.
       allow create: if isAuthenticated() 
                     && request.auth.uid == userId
-                    && request.resource.data.role == "customer";
+                    && (request.resource.data.role == "customer" || request.resource.data.role == "retailer");
                     
       // Allow update if the user is authenticated and updating their own document,
       // BUT prevent them from changing their role.
@@ -44,14 +44,17 @@ service cloud.firestore {
 
     // Match the products collection
     match /products/{productId} {
-      // Allow any authenticated user (customer, retailer, admin) to read products
-      allow read: if isAuthenticated();
+      // Allow public read for product discovery and details
+      allow read: if true;
       
       // Allow creation only if the user is a retailer and the retailerId matches their uid, or if user is admin
       allow create: if (isRetailer() && request.resource.data.retailerId == request.auth.uid) || isAdmin();
                     
-      // Allow update and delete only if the user is a retailer and they own the product, or if user is admin
-      allow update, delete: if (isRetailer() && resource.data.retailerId == request.auth.uid) || isAdmin();
+      // Allow update only if the user is a retailer who owns the product, cannot transfer ownership, or if user is admin
+      allow update: if (isRetailer() && resource.data.retailerId == request.auth.uid && request.resource.data.retailerId == resource.data.retailerId) || isAdmin();
+
+      // Allow delete only if the user is a retailer and they own the product, or if user is admin
+      allow delete: if (isRetailer() && resource.data.retailerId == request.auth.uid) || isAdmin();
     }
   }
 }

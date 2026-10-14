@@ -227,7 +227,7 @@ export default function CustomerProductDiscovery({ initialProducts }: CustomerPr
             <select 
               id="sort"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'relevance' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc')}
               className="rounded-xl bg-white border border-[#CBD5E1] py-1.5 pl-3 pr-8 text-xs font-medium text-[#111827] focus:outline-none focus:border-[#10B981] shadow-sm"
             >
               <option value="relevance">Relevance / Default</option>
@@ -267,6 +267,8 @@ export default function CustomerProductDiscovery({ initialProducts }: CustomerPr
                     <img 
                       src={product.imageUrl} 
                       alt={product.name} 
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300" 
                     />
                   ) : (

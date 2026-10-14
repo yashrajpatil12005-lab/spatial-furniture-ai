@@ -113,32 +113,21 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 export default function FeaturedFurniture() {
-  const { user, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading: authLoading } = useAuth();
+  const [products, setProducts] = useState<Product[]>(() => DEMO_PRODUCTS.slice(0, 4));
+  const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Wait for Firebase Authentication initialization to complete
     if (authLoading) {
       return;
     }
 
-    // 2. Unauthenticated visitors: render showcase catalog safely without invoking protected Firestore APIs
-    if (!user) {
-      if (isMounted) {
-        setProducts(DEMO_PRODUCTS.slice(0, 4));
-        setLoading(false);
-      }
-      return;
-    }
-
-    // 3. Authenticated users: fetch live products from Firestore
+    // Fetch live products for all visitors (public Firestore read enabled)
     async function loadFeatured() {
       try {
-        setLoading(true);
         setFetchError(false);
         const data = await getProducts();
         if (isMounted) {
@@ -151,7 +140,7 @@ export default function FeaturedFurniture() {
       } catch (err) {
         console.error('Error fetching featured products:', err);
         if (isMounted) {
-          // Fall back to demo showcase items if Firestore error occurs
+          setFetchError(true);
           setProducts(DEMO_PRODUCTS.slice(0, 4));
         }
       } finally {
@@ -165,7 +154,7 @@ export default function FeaturedFurniture() {
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading]);
+  }, [authLoading]);
 
   return (
     <section className="py-12 sm:py-16 bg-white border-t border-[#E2E8F0]">
