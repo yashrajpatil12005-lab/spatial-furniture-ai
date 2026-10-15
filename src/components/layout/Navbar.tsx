@@ -87,16 +87,8 @@ export default function Navbar() {
     const targetPath = hashIndex !== -1 ? href.slice(0, hashIndex) : href;
     const targetHash = hashIndex !== -1 ? href.slice(hashIndex) : '';
 
-    // 1. Links with a hash target (e.g., /customer/products#room-visualizer, /#how-it-works, /admin#platform-health)
+    // 1. Links with a hash target (e.g., /customer#recommendations, /#how-it-works)
     if (targetHash) {
-      if (targetHash === '#room-visualizer') {
-        const isVisualizerDedicatedRoute =
-          pathname === '/customer/visualizer' ||
-          pathname.startsWith('/customer/visualizer/') ||
-          pathname === '/visualizer' ||
-          pathname.startsWith('/visualizer/');
-        return (pathname === targetPath && currentHash === '#room-visualizer') || isVisualizerDedicatedRoute;
-      }
       return pathname === targetPath && currentHash === targetHash;
     }
 
@@ -117,9 +109,9 @@ export default function Navbar() {
     }
 
     // 4. Exact match for Customer Dashboard '/customer'
-    // Highlighted ONLY on the actual customer dashboard route, never on /customer/products or subroutes
+    // Highlighted ONLY on the actual customer dashboard route without a specific hash
     if (href === '/customer') {
-      return pathname === '/customer';
+      return pathname === '/customer' && !currentHash;
     }
 
     // 5. Exact match for Retailer Dashboard '/retailer'
@@ -129,7 +121,7 @@ export default function Navbar() {
 
     // 6. Exact match for Admin Overview '/admin'
     if (href === '/admin') {
-      return pathname === '/admin' && currentHash !== '#platform-health';
+      return pathname === '/admin';
     }
 
     // 7. Exact match for Add Product '/retailer/products/new'
@@ -147,17 +139,26 @@ export default function Navbar() {
     }
 
     // 9. Furniture Catalog '/customer/products'
-    // Active on /customer/products (when hash is not #room-visualizer)
-    // and on nested routes like /customer/products/[id]
+    // Active on /customer/products and on nested routes like /customer/products/[id]
     if (href === '/customer/products') {
-      if (currentHash === '#room-visualizer') return false;
       return (
         pathname === '/customer/products' ||
         (pathname.startsWith('/customer/products/') && !pathname.includes('visualizer'))
       );
     }
 
-    // 10. Contact '/contact'
+    // 10. Room Visualizer '/customer/visualizer'
+    // Active on /customer/visualizer, /customer/visualizer/[id], /visualizer
+    if (href === '/customer/visualizer') {
+      return (
+        pathname === '/customer/visualizer' ||
+        pathname.startsWith('/customer/visualizer/') ||
+        pathname === '/visualizer' ||
+        pathname.startsWith('/visualizer/')
+      );
+    }
+
+    // 11. Contact '/contact'
     if (href === '/contact') {
       return pathname === '/contact';
     }
@@ -172,8 +173,8 @@ export default function Navbar() {
   // 1. Logged-out / Public Links
   const publicLinks = [
     { label: 'Home', href: '/' },
-    { label: 'Explore Furniture', href: '/customer/products' },
-    { label: 'AI Room Visualizer', href: '/customer/products#room-visualizer' },
+    { label: 'Furniture Catalog', href: '/customer/products' },
+    { label: 'Room Visualizer', href: '/customer/visualizer' },
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'For Retailers', href: '/#for-retailers' },
     { label: 'Contact', href: '/contact' },
@@ -183,7 +184,8 @@ export default function Navbar() {
   const customerLinks = [
     { label: 'Dashboard', href: '/customer' },
     { label: 'Furniture Catalog', href: '/customer/products' },
-    { label: 'Room Visualizer', href: '/customer/products#room-visualizer' },
+    { label: 'Room Visualizer', href: '/customer/visualizer' },
+    { label: 'AI Recommendations', href: '/customer#recommendations' },
   ];
 
   // 3. Retailer Partner Links
@@ -194,12 +196,12 @@ export default function Navbar() {
     { label: 'Public Site', href: '/' },
   ];
 
-  // 4. Admin Links
+  // 4. Admin Links (Overview is the main summary page; duplicate Platform Health link removed)
   const adminLinks = [
     { label: 'Overview', href: '/admin' },
     { label: 'Product Management', href: '/retailer/products' },
-    { label: 'Platform Health', href: '/admin#platform-health' },
-    { label: 'Customer View', href: '/customer/products' },
+    { label: 'Furniture Catalog', href: '/customer/products' },
+    { label: 'Room Visualizer', href: '/customer/visualizer' },
     { label: 'Public Site', href: '/' },
   ];
 
@@ -374,7 +376,27 @@ export default function Navbar() {
                             <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                             </svg>
-                            <span>Explore Catalog</span>
+                            <span>Furniture Catalog</span>
+                          </Link>
+                          <Link
+                            href="/customer/visualizer"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#F8FAFC] hover:text-[#047857] transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span>Room Visualizer</span>
+                          </Link>
+                          <Link
+                            href="/customer#recommendations"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#F8FAFC] hover:text-[#047857] transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span>AI Recommendations</span>
                           </Link>
                           <Link
                             href="/contact"

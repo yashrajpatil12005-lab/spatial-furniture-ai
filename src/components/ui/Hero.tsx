@@ -85,9 +85,9 @@ export default function Hero() {
 
               {/* Third Contextual Action */}
               <Link
-                href="/customer/products"
+                href="/customer/visualizer"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#ECFDF5] hover:bg-[#D1FAE5] border border-[#A7F3D0] px-4 py-3 text-sm font-semibold text-[#047857] transition-colors"
-                title="Select a furniture piece from the catalog to launch room analysis"
+                title="Launch multimodal room analysis with Gemini AI"
               >
                 <svg className="w-4 h-4 text-[#047857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />

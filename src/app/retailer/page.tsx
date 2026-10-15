@@ -3,16 +3,16 @@
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import Link from 'next/link';
-import { seedDemoProducts } from '@/lib/products/seed';
+import { seedDemoProducts, categorizeSeedingError } from '@/lib/products/seed';
 import { useState, useEffect } from 'react';
 import { getRetailerProducts } from '@/lib/products';
 import { Product } from '@/lib/types';
 
 export default function RetailerDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [statusNotice, setStatusNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [statusNotice, setStatusNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -25,17 +25,48 @@ export default function RetailerDashboard() {
   const lowStock = products.filter(p => (p.stock || 0) <= 5).length;
 
   const handleSeed = async () => {
-    if (!user) return;
+    if (!user) {
+      setStatusNotice({
+        type: 'error',
+        message: 'Authentication Required: You must be signed in to seed catalog products.',
+      });
+      return;
+    }
+
+    if (userData?.role !== 'retailer' && userData?.role !== 'admin') {
+      setStatusNotice({
+        type: 'error',
+        message: 'Permission Denied: Only authorized retail partners and administrators can seed catalog products.',
+      });
+      return;
+    }
+
     setLoading(true);
     setStatusNotice(null);
     try {
-      await seedDemoProducts(user.uid);
+      const result = await seedDemoProducts(user.uid);
       const data = await getRetailerProducts(user.uid);
       setProducts(data);
-      setStatusNotice({ type: 'success', message: 'Demo catalog products successfully seeded into your retailer inventory.' });
+
+      if (result.alreadySeeded) {
+        setStatusNotice({
+          type: 'info',
+          message: `All demo catalog products are already present in your inventory (${result.totalCatalogCount} total). No duplicate products were created.`,
+        });
+      } else {
+        const itemWord = result.seededCount === 1 ? 'product' : 'products';
+        setStatusNotice({
+          type: 'success',
+          message: `Successfully seeded ${result.seededCount} demo ${itemWord} into your retailer inventory.`,
+        });
+      }
     } catch (error) {
-      console.error(error);
-      setStatusNotice({ type: 'error', message: 'Failed to seed demo catalog. Please check your network or permissions.' });
+      console.error('Retailer demo seeding error:', error);
+      const errorInfo = categorizeSeedingError(error);
+      setStatusNotice({
+        type: 'error',
+        message: `${errorInfo.title}: ${errorInfo.message}`,
+      });
     } finally {
       setLoading(false);
     }
@@ -70,9 +101,12 @@ export default function RetailerDashboard() {
           {/* In-app Status Notice */}
           {statusNotice && (
             <div
+              role="alert"
               className={`p-4 rounded-xl text-xs font-medium flex items-center justify-between shadow-xs animate-fadeIn ${
                 statusNotice.type === 'success'
                   ? 'bg-[#F0FDF4] border border-[#A7F3D0] text-[#065F46]'
+                  : statusNotice.type === 'info'
+                  ? 'bg-[#F0F9FF] border border-[#BAE6FD] text-[#0369A1]'
                   : 'bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B]'
               }`}
             >
@@ -80,6 +114,10 @@ export default function RetailerDashboard() {
                 {statusNotice.type === 'success' ? (
                   <svg className="w-4 h-4 text-[#10B981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : statusNotice.type === 'info' ? (
+                  <svg className="w-4 h-4 text-[#0284C7] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 ) : (
                   <svg className="w-4 h-4 text-[#EF4444] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

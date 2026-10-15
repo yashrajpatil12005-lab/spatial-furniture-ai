@@ -134,10 +134,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
           <p className="text-xs text-[#64748B]">Configure your room parameters to get tailored AI styling suggestions.</p>
           
           <div>
-            <label className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
+            <label htmlFor="rec-room-type-select" className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
               Room Type
             </label>
             <select 
+              id="rec-room-type-select"
               value={preferences.roomType}
               onChange={(e) => setPreferences({...preferences, roomType: e.target.value})}
               className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-sm text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 transition-all"
@@ -151,10 +152,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
+            <label htmlFor="rec-style-select" className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
               Style Preference
             </label>
             <select 
+              id="rec-style-select"
               value={preferences.style}
               onChange={(e) => setPreferences({...preferences, style: e.target.value})}
               className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-sm text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 transition-all"
@@ -170,10 +172,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
+              <label htmlFor="rec-min-price-input" className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
                 Min Budget (₹)
               </label>
               <input 
+                id="rec-min-price-input"
                 type="number"
                 value={preferences.minPrice}
                 onChange={(e) => setPreferences({...preferences, minPrice: Number(e.target.value)})}
@@ -181,10 +184,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
+              <label htmlFor="rec-max-price-input" className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
                 Max Budget (₹)
               </label>
               <input 
+                id="rec-max-price-input"
                 type="number"
                 value={preferences.maxPrice}
                 onChange={(e) => setPreferences({...preferences, maxPrice: Number(e.target.value)})}
@@ -194,10 +198,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
+            <label htmlFor="rec-additional-notes-input" className="block text-xs font-bold text-[#111827] uppercase tracking-wider mb-1.5">
               Additional Notes
             </label>
             <textarea 
+              id="rec-additional-notes-input"
               value={preferences.additionalNotes}
               onChange={(e) => setPreferences({...preferences, additionalNotes: e.target.value})}
               placeholder="e.g. Spacious seating for family, neutral tones..."

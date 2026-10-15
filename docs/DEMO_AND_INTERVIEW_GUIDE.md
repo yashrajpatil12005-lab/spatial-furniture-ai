@@ -82,7 +82,7 @@ This guide provides a structured, repeatable presentation flow for college defen
 
 ### Step 6: Platform Administration & Integration Health (1 min)
 1. **Navigate to `/admin`** (when logged in with an authorized admin account):
-   - View the Platform Health Monitor.
+   - View the Admin Overview Dashboard with integrated catalog statistics and system diagnostics.
    - Show status check on Gemini AI API integration (`Operational`).
    - If accessed by a non-admin, demonstrate the 403 Forbidden protection.
 

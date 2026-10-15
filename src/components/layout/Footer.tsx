@@ -30,7 +30,8 @@ export default function Footer() {
               <span className="text-xs text-[#94A3B8]">Loading navigation...</span>
             ) : !user ? (
               <>
-                <Link href="/customer/products" className="hover:text-[#059669] transition-colors">Explore Furniture</Link>
+                <Link href="/customer/products" className="hover:text-[#059669] transition-colors">Furniture Catalog</Link>
+                <Link href="/customer/visualizer" className="hover:text-[#059669] transition-colors">Room Visualizer</Link>
                 <Link href="/#how-it-works" className="hover:text-[#059669] transition-colors">How It Works</Link>
                 <Link href="/#for-retailers" className="hover:text-[#059669] transition-colors">For Retailers</Link>
                 <Link href="/contact" className="hover:text-[#059669] transition-colors">Contact</Link>
@@ -46,14 +47,15 @@ export default function Footer() {
               <>
                 <Link href="/admin" className="hover:text-[#059669] transition-colors">Admin Overview</Link>
                 <Link href="/retailer/products" className="hover:text-[#059669] transition-colors">Manage Products</Link>
-                <Link href="/admin#platform-health" className="hover:text-[#059669] transition-colors">Platform Health</Link>
+                <Link href="/customer/products" className="hover:text-[#059669] transition-colors">Furniture Catalog</Link>
                 <Link href="/" className="hover:text-[#059669] transition-colors">Public Site</Link>
               </>
             ) : (
               <>
                 <Link href="/customer" className="hover:text-[#059669] transition-colors">Dashboard</Link>
                 <Link href="/customer/products" className="hover:text-[#059669] transition-colors">Furniture Catalog</Link>
-                <Link href="/customer/products#room-visualizer" className="hover:text-[#059669] transition-colors">Room Visualizer</Link>
+                <Link href="/customer/visualizer" className="hover:text-[#059669] transition-colors">Room Visualizer</Link>
+                <Link href="/customer#recommendations" className="hover:text-[#059669] transition-colors">AI Recommendations</Link>
                 <Link href="/contact" className="hover:text-[#059669] transition-colors">Support</Link>
               </>
             )}

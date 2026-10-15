@@ -80,18 +80,24 @@ export default function AiShowcase() {
             </div>
 
             {/* CTA directly to the actual workflow */}
-            <div className="pt-2">
+            <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
-                href="/customer/products"
+                href="/customer/visualizer"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#10B981] hover:bg-[#059669] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#10B981]"
               >
-                <span>Explore Catalog &amp; Try Room Analysis</span>
+                <span>Launch AI Room Visualizer</span>
                 <span aria-hidden="true">&rarr;</span>
               </Link>
-              <p className="mt-2 text-xs text-[#64748B]">
-                Upload your room photo on any product page under the &ldquo;Visualize in My Room&rdquo; panel.
-              </p>
+              <Link
+                href="/customer/products"
+                className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] px-5 py-3.5 text-sm font-semibold text-[#111827] shadow-2xs transition-all"
+              >
+                <span>Browse Catalog</span>
+              </Link>
             </div>
+            <p className="mt-2 text-xs text-[#64748B]">
+              Upload your room photo in the Room Visualizer or on any individual product page.
+            </p>
 
           </div>
 

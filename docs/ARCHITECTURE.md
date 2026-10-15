@@ -67,11 +67,11 @@ spatial-furniture-ai/
     │   ├── register/             # Account creation with live password strength meter
     │   ├── customer/             # Customer portal, catalog browsing, room visualizer
     │   ├── retailer/             # Retailer management portal (CRUD inventory)
-    │   ├── admin/                # Admin platform integration health monitor
+    │   ├── admin/                # Admin overview dashboard & system diagnostics
     │   └── api/                  # Server-side API endpoints
     │       ├── ai/visualize/     # Multimodal room layout & compatibility analysis
     │       ├── ai/recommend/     # AI style-match furniture recommendations
-    │       └── admin/            # Platform health diagnostics
+    │       └── admin/            # Integration health diagnostics
     ├── components/               # Modular presentation & container components
     │   ├── ai/                   # RoomAnalysisDashboard, VisualizationPanel, RecPanel
     │   ├── layout/               # Role-aware Navbar, Footer
