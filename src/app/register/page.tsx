@@ -38,7 +38,7 @@ export default function RegisterPage() {
   const passwordValidation = validatePassword(password);
   const passwordRequirements = getPasswordRequirements(password);
   const passwordStrength = getPasswordStrength(password);
-  const showPasswordError = (passwordTouched || isSubmitted) && !passwordValidation.isValid;
+  const showPasswordError = (passwordTouched || isSubmitted || password.length > PASSWORD_MAX_LENGTH) && !passwordValidation.isValid;
 
   // Confirm password validation
   const confirmValidation = validateConfirmPassword(password, confirmPassword);
@@ -222,12 +222,12 @@ export default function RegisterPage() {
                     id="password-strength-badge"
                     className="text-[11px] font-semibold px-2 py-0.5 rounded-full border transition-colors"
                     style={{
-                      color: passwordStrength.color,
-                      borderColor: `${passwordStrength.color}40`,
-                      backgroundColor: `${passwordStrength.color}15`,
+                      color: password.length > PASSWORD_MAX_LENGTH ? '#EF4444' : passwordStrength.color,
+                      borderColor: password.length > PASSWORD_MAX_LENGTH ? '#EF444440' : `${passwordStrength.color}40`,
+                      backgroundColor: password.length > PASSWORD_MAX_LENGTH ? '#EF444415' : `${passwordStrength.color}15`,
                     }}
                   >
-                    {passwordStrength.label}
+                    {password.length > PASSWORD_MAX_LENGTH ? 'Too Long' : passwordStrength.label}
                   </span>
                 )}
               </div>
@@ -237,7 +237,6 @@ export default function RegisterPage() {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  maxLength={PASSWORD_MAX_LENGTH}
                   autoComplete="new-password"
                   className={`block w-full pl-4 pr-11 py-2.5 rounded-xl bg-white text-[#111827] placeholder-[#94A3B8] text-sm focus:outline-none transition-all ${
                     showPasswordError
@@ -275,22 +274,28 @@ export default function RegisterPage() {
               {password.length > 0 && (
                 <div className="mt-2 space-y-1.5" aria-live="polite">
                   <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
-                    {[1, 2, 3, 4].map((step) => (
-                      <div
-                        key={step}
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          step <= passwordStrength.score
-                            ? step === 1
-                              ? 'bg-[#EF4444]'
-                              : step === 2
-                              ? 'bg-[#F59E0B]'
-                              : step === 3
-                              ? 'bg-[#3B82F6]'
-                              : 'bg-[#10B981]'
-                            : 'bg-[#E2E8F0]'
-                        }`}
-                      />
-                    ))}
+                    {[1, 2, 3, 4].map((step) => {
+                      const isOver = password.length > PASSWORD_MAX_LENGTH;
+                      let stepBg = 'bg-[#E2E8F0]';
+                      if (isOver) {
+                        stepBg = step === 1 ? 'bg-[#EF4444]' : 'bg-[#E2E8F0]';
+                      } else if (step <= passwordStrength.score) {
+                        stepBg =
+                          step === 1
+                            ? 'bg-[#EF4444]'
+                            : step === 2
+                            ? 'bg-[#F59E0B]'
+                            : step === 3
+                            ? 'bg-[#3B82F6]'
+                            : 'bg-[#10B981]';
+                      }
+                      return (
+                        <div
+                          key={step}
+                          className={`h-full rounded-full transition-all duration-300 ${stepBg}`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -301,13 +306,22 @@ export default function RegisterPage() {
                   <span className="font-semibold text-[#111827] text-[11px] uppercase tracking-wider">
                     Password Requirements
                   </span>
-                  <span className="text-[11px] text-[#64748B] font-mono">
-                    {password.length}/128
+                  <span
+                    className={`text-[11px] font-mono ${
+                      password.length > PASSWORD_MAX_LENGTH
+                        ? 'text-[#EF4444] font-bold'
+                        : 'text-[#64748B]'
+                    }`}
+                  >
+                    {password.length}/{PASSWORD_MAX_LENGTH}
                   </span>
                 </div>
                 <ul className="space-y-1">
                   {[
-                    { met: passwordRequirements.minLength && passwordRequirements.maxLength, text: '8 to 128 characters' },
+                    {
+                      met: passwordRequirements.minLength && passwordRequirements.maxLength,
+                      text: `8 to ${PASSWORD_MAX_LENGTH} characters`,
+                    },
                     { met: passwordRequirements.hasUppercase, text: 'At least one uppercase letter (A-Z)' },
                     { met: passwordRequirements.hasLowercase, text: 'At least one lowercase letter (a-z)' },
                     { met: passwordRequirements.hasNumber, text: 'At least one number (0-9)' },
@@ -351,7 +365,6 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
-                  maxLength={PASSWORD_MAX_LENGTH}
                   autoComplete="new-password"
                   className={`block w-full pl-4 pr-11 py-2.5 rounded-xl bg-white text-[#111827] placeholder-[#94A3B8] text-sm focus:outline-none transition-all ${
                     showConfirmPasswordError

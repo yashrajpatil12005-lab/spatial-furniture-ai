@@ -87,7 +87,7 @@ export function normalizeFullName(name: string): string {
 }
 
 export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 128;
+export const PASSWORD_MAX_LENGTH = 64;
 
 export type PasswordStrengthLabel = 'Weak' | 'Fair' | 'Good' | 'Strong';
 
@@ -174,7 +174,7 @@ export function getPasswordStrength(password: string): PasswordStrength {
 
 /**
  * Validates password against the registration password policy:
- * - 8 to 128 characters
+ * - 8 to 64 characters
  * - Uppercase, Lowercase, Number, and Special character
  * Never trims or modifies the password string.
  */

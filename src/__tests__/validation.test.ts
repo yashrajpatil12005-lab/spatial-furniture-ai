@@ -6,6 +6,8 @@ import {
   validateConfirmPassword,
   getPasswordStrength,
   FULL_NAME_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
 } from '@/lib/utils/validation';
 
 describe('User Validation Utilities', () => {
@@ -111,6 +113,33 @@ describe('User Validation Utilities', () => {
       const res = validatePassword('AlphaNumeric1234');
       expect(res.isValid).toBe(false);
       expect(res.error).toContain('special character');
+    });
+
+    it('enforces 8 to 64 character boundary without silent truncation', () => {
+      expect(PASSWORD_MIN_LENGTH).toBe(8);
+      expect(PASSWORD_MAX_LENGTH).toBe(64);
+
+      // Exactly 64 characters (3 + 61)
+      const exact64 = 'A1!' + 'x'.repeat(61);
+      expect(exact64.length).toBe(64);
+      const res64 = validatePassword(exact64);
+      expect(res64.isValid).toBe(true);
+      expect(res64.requirements.maxLength).toBe(true);
+
+      // 65 characters (3 + 62)
+      const exact65 = 'A1!' + 'x'.repeat(62);
+      expect(exact65.length).toBe(65);
+      const res65 = validatePassword(exact65);
+      expect(res65.isValid).toBe(false);
+      expect(res65.requirements.maxLength).toBe(false);
+      expect(res65.error).toBe('Password cannot exceed 64 characters.');
+
+      // 80 characters: verifies string is never truncated silently
+      const longInput = 'A1!' + 'x'.repeat(77);
+      expect(longInput.length).toBe(80);
+      const resLong = validatePassword(longInput);
+      expect(resLong.isValid).toBe(false);
+      expect(resLong.error).toBe('Password cannot exceed 64 characters.');
     });
   });
 

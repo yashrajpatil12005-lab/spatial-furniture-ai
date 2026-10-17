@@ -29,7 +29,8 @@ This guide provides a structured, repeatable presentation flow for college defen
    - Type in the password field to demonstrate the **Live Password Strength Meter & Requirements Checklist**:
      - `"pass"` -> **Weak** (Red, requirement checkmarks unmet).
      - `"Password123"` -> **Fair** (Amber, 3 of 4 character types satisfied).
-     - `"SpatialPass123!"` -> **Strong** (Green, meets 8–128 character policy, uppercase, lowercase, number, and special character).
+     - `"SpatialPass123!"` -> **Strong** (Green, meets 8–64 character policy, uppercase, lowercase, number, and special character).
+     - Oversized (>64 chars) -> **Too Long** (Red warning badge, counter displays red `65/64`, no silent truncation).
    - Toggle the password visibility eye icon to demonstrate accessibility and ARIA labeling.
    - Mention security best practice: plaintext passwords are never stored in Firestore or logs; Firebase Authentication manages all credential hashing.
 2. **Account Creation**:
@@ -150,7 +151,7 @@ This guide provides a structured, repeatable presentation flow for college defen
 
 **Q8: How are passwords secured and validated according to college presentation feedback?**
 > *Answer:*
-> We enforce an 8 to 128 character policy requiring at least one uppercase letter, one lowercase letter, one number, and one special character across both frontend form validation ([`src/lib/utils/validation.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/utils/validation.ts)) and auth helpers ([`src/lib/firebase/auth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/auth.ts)). Plaintext passwords are never stored in Firestore documents, application state, or logs. Credential hashing, salt generation, and brute-force mitigation are handled entirely by Firebase Authentication.
+> We enforce an 8 to 64 character policy requiring at least one uppercase letter, one lowercase letter, one number, and one special character across both frontend form validation ([`src/lib/utils/validation.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/utils/validation.ts)) and auth helpers ([`src/lib/firebase/auth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/auth.ts)). Passwords exceeding 64 characters are rejected with an explicit validation error rather than being silently truncated, ensuring user intent is fully preserved. Plaintext passwords are never stored in Firestore documents, application state, or logs. Credential hashing, salt generation, and brute-force mitigation are handled entirely by Firebase Authentication.
 
 ---
 
@@ -169,7 +170,7 @@ To configure a new or existing Firebase project for full email verification & pa
    - **Email enumeration protection**: Recommended enabled.
 4. **Authentication -> Settings -> Password policy** *(Identity Platform feature)*:
    - Minimum characters: **8**.
-   - Max characters: **128**.
+   - Max characters: **64** (or default; must not be less than application validation).
    - Require uppercase character: **Checked**.
    - Require lowercase character: **Checked**.
    - Require numeric character: **Checked**.

@@ -43,7 +43,7 @@ Selecting furniture online is plagued by spatial mismatch, style clashes, and hi
   - Verification check button with automated token refresh (`getIdToken(true)`) to update Firebase claims before granting portal access.
   - Graceful handling for rate limits (`auth/too-many-requests`), network outages, and expired links.
 - **Strict Password Requirements**:
-  - Enforced length: **8 to 128 characters** across frontend and backend validation.
+  - Enforced length: **8 to 64 characters** across frontend and backend validation (never silently truncated).
   - Mandatory complexity: at least one uppercase letter (A-Z), one lowercase letter (a-z), one number (0-9), and one special character (!@#$...).
   - Live 4-tier visual password strength bar (Weak / Fair / Good / Strong) and real-time requirement checklist.
   - Accessible show/hide password toggle with ARIA attributes.

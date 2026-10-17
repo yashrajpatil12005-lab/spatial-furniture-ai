@@ -96,23 +96,36 @@ describe('Authentication & Email Verification Security Suite', () => {
   });
 
   describe('Password Requirements & Enforcement', () => {
-    it('enforces minimum length of 8 and maximum length of 128 characters', () => {
+    it('enforces minimum length of 8 and maximum length of 64 characters', () => {
       expect(PASSWORD_MIN_LENGTH).toBe(8);
-      expect(PASSWORD_MAX_LENGTH).toBe(128);
+      expect(PASSWORD_MAX_LENGTH).toBe(64);
 
       // Short password (< 8 chars)
       const shortPass = validatePassword('Pass1!');
       expect(shortPass.isValid).toBe(false);
       expect(shortPass.error).toContain('at least 8 characters');
 
-      // Too long password (> 128 chars)
-      const longPass = validatePassword('A1!' + 'a'.repeat(126));
+      // Too long password (> 64 chars, e.g. 65 chars)
+      const longPass = validatePassword('A1!' + 'a'.repeat(62));
       expect(longPass.isValid).toBe(false);
-      expect(longPass.error).toContain('cannot exceed 128 characters');
+      expect(longPass.error).toContain('cannot exceed 64 characters');
+
+      // Boundary valid 64-char password
+      const validMaxPass = validatePassword('A1!' + 'a'.repeat(61));
+      expect(validMaxPass.isValid).toBe(true);
+      expect(validMaxPass.error).toBeUndefined();
 
       // Valid 8-char password
       const validMinPass = validatePassword('Valid1!a');
       expect(validMinPass.isValid).toBe(true);
+
+      // Verify no silent truncation: 75-character password remains intact and triggers rejection
+      const oversized = 'A1!' + 'x'.repeat(72);
+      expect(oversized.length).toBe(75);
+      const oversizedVal = validatePassword(oversized);
+      expect(oversizedVal.isValid).toBe(false);
+      expect(oversizedVal.requirements.maxLength).toBe(false);
+      expect(oversizedVal.error).toBe('Password cannot exceed 64 characters.');
     });
 
     it('requires uppercase, lowercase, numeric, and special characters', () => {
