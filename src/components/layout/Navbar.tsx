@@ -204,13 +204,26 @@ export default function Navbar() {
     { label: 'Public Site', href: '/' },
   ];
 
+  // 5. Unverified User Links (Public browsing + Verify Email)
+  const unverifiedLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Furniture Catalog', href: '/customer/products' },
+    { label: 'Room Visualizer', href: '/customer/visualizer' },
+    { label: 'Verify Email', href: '/verify-email' },
+    { label: 'Contact', href: '/contact' },
+  ];
+
   // Pick links according to role state
   let currentNavLinks = publicLinks;
   let roleDisplayName = '';
   let roleBadgeClass = '';
 
   if (user) {
-    if (role === 'retailer') {
+    if (user.emailVerified === false) {
+      currentNavLinks = unverifiedLinks;
+      roleDisplayName = 'Pending Verification';
+      roleBadgeClass = 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]';
+    } else if (role === 'retailer') {
       currentNavLinks = retailerLinks;
       roleDisplayName = 'Retail Partner';
       roleBadgeClass = 'bg-[#ECFDF5] text-[#047857] border-[#A7F3D0]';
@@ -355,8 +368,39 @@ export default function Navbar() {
 
                     {/* Role-Specific Contextual Links */}
                     <div className="py-1 space-y-0.5 text-xs text-[#334155]">
-                      {role === 'customer' && (
+                      {user.emailVerified === false ? (
+                        <div className="p-2 space-y-2">
+                          <div className="p-2.5 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-xs">
+                            <p className="font-bold text-[#92400E] flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse"></span>
+                              Verification Pending
+                            </p>
+                            <p className="text-[11px] text-[#B45309] mt-1">
+                              Please verify your email address to unlock private workspaces and AI tools.
+                            </p>
+                            <Link
+                              href={`/verify-email?email=${encodeURIComponent(user.email || '')}`}
+                              onClick={() => setAccountMenuOpen(false)}
+                              className="mt-2 block w-full text-center py-1.5 px-2 rounded-lg bg-[#047857] text-white text-[11px] font-semibold hover:bg-[#065F46] transition-colors shadow-2xs"
+                            >
+                              Verify Email Now &rarr;
+                            </Link>
+                          </div>
+                          <Link
+                            href="/customer/products"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#F8FAFC] hover:text-[#047857] transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            <span>Browse Furniture Catalog</span>
+                          </Link>
+                        </div>
+                      ) : (
                         <>
+                          {role === 'customer' && (
+                            <>
                           <Link
                             href="/customer"
                             onClick={() => setAccountMenuOpen(false)}
@@ -481,7 +525,9 @@ export default function Navbar() {
                           </Link>
                         </>
                       )}
-                    </div>
+                    </>
+                  )}
+                </div>
 
                     {/* Divider & Sign Out */}
                     <div className="pt-1 mt-1 border-t border-[#F1F5F9]">
@@ -545,6 +591,30 @@ export default function Navbar() {
 
         </div>
       </div>
+
+      {/* Verification Notice Banner */}
+      {user && user.emailVerified === false && (
+        <div
+          id="navbar-verification-banner"
+          role="alert"
+          className="bg-[#FFFBEB] border-b border-[#FDE68A] text-[#92400E] px-4 py-1.5 text-xs shadow-2xs"
+        >
+          <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0 animate-pulse" />
+              <span className="truncate">
+                Email verification pending for <strong>{user.email}</strong>.
+              </span>
+            </div>
+            <Link
+              href={`/verify-email?email=${encodeURIComponent(user.email || '')}`}
+              className="font-bold underline text-[#B45309] hover:text-[#78350F] shrink-0 text-[11px]"
+            >
+              Verify Email &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Menu Panel */}
       {mobileMenuOpen && (

@@ -70,6 +70,11 @@ export default function RecommendationPanel({ roomAnalysis }: RecommendationPane
       return;
     }
 
+    if (user.emailVerified === false) {
+      setError('Email verification required. Please verify your email to get personalized recommendations.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setAiFailed(false);

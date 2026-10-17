@@ -18,18 +18,35 @@ interface AuthContextType {
   user: User | null;
   userData: UserData | null;
   loading: boolean;
+  reloadUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   userData: null,
   loading: true,
+  reloadUser: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const reloadUser = async (): Promise<User | null> => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      await currentUser.reload();
+      if (currentUser.emailVerified) {
+        await currentUser.getIdToken(true);
+      }
+      // Clone user preserving prototype methods to trigger React state updates
+      const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(currentUser)), currentUser);
+      setUser(updatedUser);
+      return updatedUser;
+    }
+    return null;
+  };
 
   useEffect(() => {
     let unsubscribeDoc: () => void;
@@ -73,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading }}>
+    <AuthContext.Provider value={{ user, userData, loading, reloadUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,10 +15,11 @@ const mockUserData = {
   createdAt: 1700000000000,
 };
 
-let mockUser: { uid: string; email: string; getIdToken: () => Promise<string> } | null = {
+let mockUser: { uid: string; email: string; getIdToken: () => Promise<string>; emailVerified?: boolean } | null = {
   uid: 'user-123',
   email: 'alex@example.com',
   getIdToken: vi.fn().mockResolvedValue('fake-token'),
+  emailVerified: true,
 };
 
 vi.mock('@/lib/firebase/AuthContext', () => ({
@@ -104,6 +105,7 @@ describe('Navigation and Page-Content Separation', () => {
       uid: 'user-123',
       email: 'alex@example.com',
       getIdToken: vi.fn().mockResolvedValue('fake-token'),
+      emailVerified: true,
     };
     mockPathname = '/customer/products';
     // Mock window hash

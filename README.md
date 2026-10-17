@@ -36,10 +36,26 @@ Selecting furniture online is plagued by spatial mismatch, style clashes, and hi
 - **AI Recommendation Engine**: Cross-catalog product suggestions with explainable "Why this fits your room" rationales.
 
 ### 🔐 Authentication & Security
-- **Role-Based Access Control (RBAC)**: Distinct permissions for Visitors, Customers, Retailers, and Administrators.
-- **Advanced User Registration**: Professional full name Unicode validation and live 4-tier password strength meter (Weak/Fair/Good/Strong).
-- **Serverless Token Verification**: Validates Firebase ID tokens cryptographically via Google Identity Toolkit in serverless API routes without heavy SDK dependencies.
-- **Hardened Database Rules**: Firestore security rules enforcing multi-tenant retailer ownership and blocking role escalation.
+- **Mandatory Email Verification**:
+  - Automated Firebase verification email dispatched immediately upon registration.
+  - Dedicated verification-pending portal ([`/verify-email`](file:///src/app/verify-email/page.tsx)) displaying the registered email address.
+  - Rate-limited resend action with a **60-second cooldown timer** and loading state indicators.
+  - Verification check button with automated token refresh (`getIdToken(true)`) to update Firebase claims before granting portal access.
+  - Graceful handling for rate limits (`auth/too-many-requests`), network outages, and expired links.
+- **Strict Password Requirements**:
+  - Enforced length: **8 to 128 characters** across frontend and backend validation.
+  - Mandatory complexity: at least one uppercase letter (A-Z), one lowercase letter (a-z), one number (0-9), and one special character (!@#$...).
+  - Live 4-tier visual password strength bar (Weak / Fair / Good / Strong) and real-time requirement checklist.
+  - Accessible show/hide password toggle with ARIA attributes.
+  - **Zero plaintext password exposure**: Passwords are never logged or saved to Firestore; credential hashing and security are delegated exclusively to Firebase Authentication.
+- **Authoritative Server-Side Token Verification**:
+  - Protected API routes ([`/api/ai/visualize`](file:///src/app/api/ai/visualize/route.ts), [`/api/ai/recommend`](file:///src/app/api/ai/recommend/route.ts), [`/api/admin/integrations`](file:///src/app/api/admin/integrations/route.ts)) verify Firebase ID tokens via Google Identity Toolkit REST API (`accounts:lookup`).
+  - Authoritatively checks `emailVerified` from Google servers; client-provided booleans are strictly disregarded.
+  - Unverified users receive **HTTP 403 Forbidden** (`EMAIL_NOT_VERIFIED`).
+- **Role-Based Access Control (RBAC)**:
+  - Whitelisted registration roles (`customer` | `retailer`) preventing self-assignment of `admin` privileges.
+  - Protected route wrappers ([`ProtectedRoute.tsx`](file:///src/lib/firebase/ProtectedRoute.tsx)) redirect unverified users to `/verify-email`.
+  - Hardened Firestore security rules enforcing multi-tenant retailer ownership and blocking role escalation.
 - **HTTP Security Headers**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and strict referrer policies.
 
 ### 🏢 Retailer & Admin Operations

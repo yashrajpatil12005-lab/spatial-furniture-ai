@@ -12,10 +12,11 @@ import Footer from '@/components/layout/Footer';
 import * as productsModule from '@/lib/products';
 
 // Mock AuthContext
-let mockUser: { uid: string; email: string; displayName?: string } | null = {
+let mockUser: { uid: string; email: string; displayName?: string; emailVerified?: boolean } | null = {
   uid: 'retailer-test-uid-123',
   email: 'retailer@example.com',
   displayName: 'LuxeLiving Store',
+  emailVerified: true,
 };
 
 let mockUserData: { role: 'customer' | 'retailer' | 'admin'; name?: string } | null = {

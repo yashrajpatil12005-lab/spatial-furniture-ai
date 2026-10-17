@@ -10,17 +10,17 @@ const MAX_FILE_SIZE = 4.5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export async function POST(req: NextRequest) {
-  // 1. Verify user authentication
+  // 1. Verify user authentication and email verification
   const auth = await requireAuth(req);
   if (!auth.authorized) {
     return NextResponse.json<VisualizationResponse>(
       {
         success: false,
         imageGenerated: false,
-        message: 'Please sign in to analyze room layout.',
-        error: 'Unauthorized: Authentication required.',
+        message: auth.error || 'Please sign in to analyze room layout.',
+        error: auth.error || 'Unauthorized: Authentication required.',
       },
-      { status: 401 }
+      { status: auth.status || 401 }
     );
   }
 

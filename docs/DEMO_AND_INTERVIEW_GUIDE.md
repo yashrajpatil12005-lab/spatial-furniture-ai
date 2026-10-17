@@ -21,19 +21,45 @@ This guide provides a structured, repeatable presentation flow for college defen
 
 ---
 
-### Step 2: Customer Registration & Authentication (2 mins)
+### Step 2: Customer Registration & Password Security (2 mins)
 1. **Navigate to Register (`/register`)**:
    - Enter a test name (e.g., `"Jane Doe"`).
    - Demonstrate the real-time character counter (`8/50`).
    - Enter an invalid character (e.g., `Jane123`) to show the accessible error message: *"Full Name cannot contain numbers"*.
-   - Type in the password field to demonstrate the **Live Password Strength Meter**:
-     - `"pass"` -> **Weak** (Red)
-     - `"Password123"` -> **Fair** (Amber)
-     - `"SpatialPass123!"` -> **Strong** (Green) with checkmarks for all 4 criteria (uppercase, lowercase, number, special).
-   - Toggle the password visibility eye icon to demonstrate accessibility.
+   - Type in the password field to demonstrate the **Live Password Strength Meter & Requirements Checklist**:
+     - `"pass"` -> **Weak** (Red, requirement checkmarks unmet).
+     - `"Password123"` -> **Fair** (Amber, 3 of 4 character types satisfied).
+     - `"SpatialPass123!"` -> **Strong** (Green, meets 8–128 character policy, uppercase, lowercase, number, and special character).
+   - Toggle the password visibility eye icon to demonstrate accessibility and ARIA labeling.
+   - Mention security best practice: plaintext passwords are never stored in Firestore or logs; Firebase Authentication manages all credential hashing.
 2. **Account Creation**:
    - Select the **Customer** role and click **Create Account**.
-   - User is redirected to `/customer` with an authenticated session.
+   - Notice immediate dispatch of the official Firebase verification email.
+   - User is redirected directly to the **Email Verification Pending Screen (`/verify-email`)**.
+
+---
+
+### Step 2b: Email Verification Workflow & Security Enforcement (3 mins)
+1. **Verification-Pending Screen (`/verify-email`)**:
+   - Point out the registered email callout displaying the exact email address.
+   - Show the **"Verification Pending"** status badge.
+   - Click **"Resend Verification Email"**:
+     - Show the loading spinner and subsequent green dispatch confirmation.
+     - Demonstrate the **60-second cooldown timer** (`Resend email in 58s`) preventing email spam.
+2. **Demonstrate Strict Access Denial for Unverified Accounts**:
+   - Attempt to navigate directly to the customer dashboard (`http://localhost:3000/customer`).
+   - Point out that [`ProtectedRoute.tsx`](file:///src/lib/firebase/ProtectedRoute.tsx) intercepts the request and redirects back to `/verify-email`.
+   - Point out that the Navbar displays an unverified warning banner and restricts navigation links to public browsing and verification.
+   - Explain server-side protection: Protected Next.js API routes (`/api/ai/visualize`, `/api/ai/recommend`) reject unverified tokens with **HTTP 403 Forbidden** (`EMAIL_NOT_VERIFIED`). Client-supplied verification booleans are never trusted.
+3. **Simulate Login with Unverified Account**:
+   - Sign out and navigate to `/login`.
+   - Sign in with the unverified credentials.
+   - Point out that access to protected dashboards is blocked; a clear alert appears with options to **Resend Verification Email**, view **Verification Details**, or **Sign Out**.
+4. **Complete Verification & Refresh Token**:
+   - Open your email inbox and click the verification link sent by Firebase (or verify via Firebase Console).
+   - Return to `/verify-email` and click **"I've Verified My Email"**.
+   - Show the instant token refresh: `getIdToken(true)` forces Firebase to issue a new JWT containing `email_verified: true`.
+   - The status badge transitions to green **"Email Verified"**, and the user is redirected to their authorized dashboard!
 
 ---
 
@@ -114,7 +140,47 @@ This guide provides a structured, repeatable presentation flow for college defen
 
 ---
 
-## Part 3: Known Limitations & Future Roadmap
+**Q6: How is email verification enforced securely on the backend rather than trusting client state?**
+> *Answer:*
+> We never trust client-supplied booleans like `emailVerified: true`. When a protected API route (`/api/ai/visualize`, `/api/ai/recommend`, or `/api/admin/*`) is invoked, [`src/lib/firebase/serverAuth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/serverAuth.ts) extracts the `Bearer <token>` from the HTTP `Authorization` header and makes a trusted server-side request to Google Identity Toolkit (`https://identitytoolkit.googleapis.com/v1/accounts:lookup`). Google inspects the cryptographically signed token and returns the authentic `emailVerified` boolean. If `emailVerified` is false, the server returns **HTTP 403 Forbidden** with error code `EMAIL_NOT_VERIFIED`.
+
+**Q7: Why must the authentication token be refreshed after clicking the email verification link?**
+> *Answer:*
+> Firebase ID tokens are stateless JSON Web Tokens (JWTs) with a 1-hour expiration time. When a user clicks the verification link in their email, Firebase's backend database marks the email as verified, but the existing JWT cached in the user's browser still holds the previous claim `email_verified: false`. When the user clicks "I've Verified My Email", our frontend calls `await user.getIdToken(true)`. The `forceRefresh: true` flag instructs Firebase to issue a brand new JWT reflecting the updated `email_verified: true` claim, which the backend then validates.
+
+**Q8: How are passwords secured and validated according to college presentation feedback?**
+> *Answer:*
+> We enforce an 8 to 128 character policy requiring at least one uppercase letter, one lowercase letter, one number, and one special character across both frontend form validation ([`src/lib/utils/validation.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/utils/validation.ts)) and auth helpers ([`src/lib/firebase/auth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/auth.ts)). Plaintext passwords are never stored in Firestore documents, application state, or logs. Credential hashing, salt generation, and brute-force mitigation are handled entirely by Firebase Authentication.
+
+---
+
+## Part 3: Firebase Console Manual Configuration Checklist
+
+To configure a new or existing Firebase project for full email verification & password policy:
+
+1. **Authentication -> Sign-in method**:
+   - Provider: **Email/Password** -> **Enabled**.
+   - Email link (passwordless sign-in) -> Disabled.
+2. **Authentication -> Templates -> Email address verification**:
+   - Customize the verification email Subject (e.g., *"Verify your email for Spatial Furniture AI"*).
+   - Sender name: *"Spatial Furniture AI"*.
+   - Action URL: Default Firebase handler domain or authorized custom domain.
+3. **Authentication -> Settings -> User actions**:
+   - **Email enumeration protection**: Recommended enabled.
+4. **Authentication -> Settings -> Password policy** *(Identity Platform feature)*:
+   - Minimum characters: **8**.
+   - Max characters: **128**.
+   - Require uppercase character: **Checked**.
+   - Require lowercase character: **Checked**.
+   - Require numeric character: **Checked**.
+   - Require non-alphanumeric character: **Checked**.
+5. **Authentication -> Settings -> Authorized domains**:
+   - Ensure `localhost` is listed for local development and live demonstrations.
+   - Add any deployment domains (e.g. `*.vercel.app` or custom domains).
+
+---
+
+## Part 4: Known Limitations & Future Roadmap
 
 1. **AI Image Synthesis**:
    - *Status*: Labeled "Coming Soon".

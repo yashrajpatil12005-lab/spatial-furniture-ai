@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { registerUser } from '@/lib/firebase/auth';
+import { registerUser, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -97,28 +97,10 @@ export default function RegisterPage() {
     
     try {
       await registerUser(email, password, normalizedName, role);
-      if (role === 'retailer') {
-        router.push('/retailer');
-      } else {
-        router.push('/customer');
-      }
+      // Redirect to verification pending screen
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
-      let friendlyMessage = 'Failed to create account. Please try again.';
-      if (err && typeof err === 'object' && 'code' in err) {
-        const code = (err as { code: string }).code;
-        if (code === 'auth/email-already-in-use') {
-          friendlyMessage = 'An account with this email address already exists.';
-        } else if (code === 'auth/invalid-email') {
-          friendlyMessage = 'Please enter a valid email address.';
-        } else if (code === 'auth/weak-password') {
-          friendlyMessage = 'Password is too weak according to server policy.';
-        } else if (code === 'auth/network-request-failed') {
-          friendlyMessage = 'Network error. Please check your internet connection.';
-        }
-      } else if (err instanceof Error) {
-        friendlyMessage = err.message;
-      }
-      setError(friendlyMessage);
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

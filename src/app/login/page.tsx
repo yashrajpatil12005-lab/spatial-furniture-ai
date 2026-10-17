@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { loginUser } from '@/lib/firebase/auth';
+import { useState, useEffect } from 'react';
+import { loginUser, sendVerificationEmail, logoutUser, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
+import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
@@ -13,11 +14,26 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [unverifiedUser, setUnverifiedUser] = useState<User | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendSuccess, setResendSuccess] = useState('');
+  const [resending, setResending] = useState(false);
   const router = useRouter();
+
+  // Cooldown timer for resend button
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setUnverifiedUser(null);
+    setResendSuccess('');
 
     if (!email.trim()) {
       setError('Email address is required.');
@@ -34,6 +50,13 @@ export default function LoginPage() {
     try {
       const userCredential = await loginUser(email, password);
       
+      // Check verification status before allowing access to protected features
+      if (!userCredential.user.emailVerified) {
+        setUnverifiedUser(userCredential.user);
+        setLoading(false);
+        return;
+      }
+
       try {
         const docRef = doc(db, 'users', userCredential.user.uid);
         const docSnap = await getDoc(docRef);
@@ -53,32 +76,37 @@ export default function LoginPage() {
         router.push('/customer');
       }
     } catch (err: unknown) {
-      // Clear, secure error messaging that avoids exposing sensitive implementation details
-      let friendlyMessage = 'Failed to sign in. Please check your credentials and try again.';
-      if (err && typeof err === 'object' && 'code' in err) {
-        const code = (err as { code: string }).code;
-        if (
-          code === 'auth/invalid-credential' ||
-          code === 'auth/user-not-found' ||
-          code === 'auth/wrong-password' ||
-          code === 'auth/invalid-login-credentials'
-        ) {
-          friendlyMessage = 'Invalid email or password. Please try again.';
-        } else if (code === 'auth/invalid-email') {
-          friendlyMessage = 'Please enter a valid email address.';
-        } else if (code === 'auth/too-many-requests') {
-          friendlyMessage = 'Too many failed login attempts. Please try again later.';
-        } else if (code === 'auth/user-disabled') {
-          friendlyMessage = 'This account has been disabled. Please contact support.';
-        } else if (code === 'auth/network-request-failed') {
-          friendlyMessage = 'Network error. Please check your internet connection.';
-        }
-      } else if (err instanceof Error) {
-        friendlyMessage = err.message;
-      }
-      setError(friendlyMessage);
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendFromLogin = async () => {
+    if (!unverifiedUser || resendCooldown > 0 || resending) return;
+    setResending(true);
+    setResendSuccess('');
+    setError('');
+    try {
+      await sendVerificationEmail(unverifiedUser);
+      setResendCooldown(60);
+      setResendSuccess(`Verification email sent to ${unverifiedUser.email}! Check your inbox.`);
+    } catch (err) {
+      setError(getFriendlyAuthErrorMessage(err));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleSignOutFromLogin = async () => {
+    try {
+      await logoutUser();
+      setUnverifiedUser(null);
+      setResendSuccess('');
+      setError('');
+    } catch (err) {
+      console.error('Logout error:', err);
+      setUnverifiedUser(null);
     }
   };
 
@@ -94,6 +122,65 @@ export default function LoginPage() {
             Sign in to access your SpatialAI portal
           </p>
         </div>
+
+        {/* Unverified Account Notice & Actions */}
+        {unverifiedUser && (
+          <div
+            id="unverified-account-notice"
+            role="alert"
+            className="p-4 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-xs space-y-3"
+          >
+            <div className="flex items-start gap-2.5">
+              <svg className="w-5 h-5 text-[#B45309] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-bold text-[#92400E]">Email Verification Required</p>
+                <p className="text-[#B45309] mt-0.5">
+                  Your email address (<strong>{unverifiedUser.email}</strong>) has not been verified yet. Please verify your email to access protected dashboards.
+                </p>
+              </div>
+            </div>
+
+            {resendSuccess && (
+              <p className="text-[#047857] font-medium bg-[#ECFDF5] p-2 rounded-lg border border-[#A7F3D0]">
+                {resendSuccess}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                id="login-resend-btn"
+                type="button"
+                onClick={handleResendFromLogin}
+                disabled={resendCooldown > 0 || resending}
+                className="px-3 py-1.5 rounded-lg bg-[#047857] text-white font-medium hover:bg-[#065F46] disabled:opacity-50 transition-colors shadow-xs"
+              >
+                {resending
+                  ? 'Sending...'
+                  : resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : 'Resend Verification Email'}
+              </button>
+
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(unverifiedUser.email || '')}`}
+                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-[#475569] hover:text-[#111827] font-medium transition-colors"
+              >
+                Verification Details &rarr;
+              </Link>
+
+              <button
+                id="login-signout-btn"
+                type="button"
+                onClick={handleSignOutFromLogin}
+                className="px-2 py-1.5 text-[#EF4444] hover:underline font-medium ml-auto"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
 
         <form className="mt-8 space-y-5" onSubmit={handleLogin} noValidate>
           <div className="space-y-4">

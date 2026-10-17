@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchProductsFromServer } from '@/lib/firebase/serverDb';
 import { generateRecommendations, RecommendationPreferences } from '@/lib/ai/recommendations';
+import { requireAuth } from '@/lib/firebase/serverAuth';
 
 export async function POST(req: NextRequest) {
+  // 1. Verify user authentication and email verification
+  const auth = await requireAuth(req);
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
+  const token = auth.token;
+
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please login to get recommendations.' },
-        { status: 401 }
-      );
-    }
-    
-    const token = authHeader.split('Bearer ')[1];
     const body = await req.json();
     const preferences: RecommendationPreferences = body.preferences || {};
     

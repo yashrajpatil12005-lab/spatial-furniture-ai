@@ -69,6 +69,11 @@ export default function VisualizationPanel({ product, customization }: Visualiza
       return;
     }
 
+    if (user.emailVerified === false) {
+      setError('Email verification required. Please verify your email before analyzing room layout.');
+      return;
+    }
+
     setIsAnalyzing(true);
     setError('');
 
