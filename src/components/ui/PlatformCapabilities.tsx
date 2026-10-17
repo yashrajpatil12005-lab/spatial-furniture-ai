@@ -57,13 +57,13 @@ export default function PlatformCapabilities() {
       ),
     },
     {
-      name: 'Retailer Inventory & Analytics',
-      description: 'Retailer suite for catalog management, stock status alerts, SKU customization tracking, and catalog health diagnostics.',
+      name: 'Live Stock & Real-Time Availability',
+      description: 'Instant multi-warehouse inventory status, SKU dimension validation, and delivery lead-time tracking for all catalog items.',
       status: 'Available',
       statusType: 'active',
       icon: (
         <svg className="w-5 h-5 text-[#047857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },

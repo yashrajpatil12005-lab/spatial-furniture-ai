@@ -33,7 +33,6 @@ export default function Footer() {
                 <Link href="/customer/products" className="hover:text-[#059669] transition-colors">Furniture Catalog</Link>
                 <Link href="/customer/visualizer" className="hover:text-[#059669] transition-colors">Room Visualizer</Link>
                 <Link href="/#how-it-works" className="hover:text-[#059669] transition-colors">How It Works</Link>
-                <Link href="/#for-retailers" className="hover:text-[#059669] transition-colors">For Retailers</Link>
                 <Link href="/contact" className="hover:text-[#059669] transition-colors">Contact</Link>
               </>
             ) : role === 'retailer' ? (

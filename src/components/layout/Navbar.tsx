@@ -176,7 +176,6 @@ export default function Navbar() {
     { label: 'Furniture Catalog', href: '/customer/products' },
     { label: 'Room Visualizer', href: '/customer/visualizer' },
     { label: 'How It Works', href: '/#how-it-works' },
-    { label: 'For Retailers', href: '/#for-retailers' },
     { label: 'Contact', href: '/contact' },
   ];
 

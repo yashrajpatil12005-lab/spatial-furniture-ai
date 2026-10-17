@@ -74,26 +74,18 @@ export default function Hero() {
                 Explore Furniture
               </Link>
 
-              {/* Secondary CTA */}
-              <Link
-                href="/retailer"
-                className="inline-flex items-center justify-center rounded-xl bg-white hover:bg-slate-50 border border-[#E2E8F0] px-5 py-3 text-sm font-semibold text-[#111827] shadow-sm transition-colors group"
-              >
-                <span>Retailer Dashboard</span>
-                <span aria-hidden="true" className="ml-1.5 text-[#10B981] transition-transform group-hover:translate-x-0.5">&rarr;</span>
-              </Link>
-
-              {/* Third Contextual Action */}
+              {/* Customer Secondary CTA */}
               <Link
                 href="/customer/visualizer"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#ECFDF5] hover:bg-[#D1FAE5] border border-[#A7F3D0] px-4 py-3 text-sm font-semibold text-[#047857] transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-50 border border-[#E2E8F0] px-5 py-3 text-sm font-semibold text-[#111827] shadow-sm transition-colors group"
                 title="Launch multimodal room analysis with Gemini AI"
               >
-                <svg className="w-4 h-4 text-[#047857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span>Analyze My Room</span>
+                <span>Room Visualizer</span>
+                <span aria-hidden="true" className="text-[#10B981] transition-transform group-hover:translate-x-0.5">&rarr;</span>
               </Link>
             </div>
 
