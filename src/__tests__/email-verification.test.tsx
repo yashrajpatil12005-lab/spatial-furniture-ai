@@ -96,22 +96,22 @@ describe('Authentication & Email Verification Security Suite', () => {
   });
 
   describe('Password Requirements & Enforcement', () => {
-    it('enforces minimum length of 8 and maximum length of 64 characters', () => {
+    it('enforces minimum length of 8 and maximum length of 12 characters', () => {
       expect(PASSWORD_MIN_LENGTH).toBe(8);
-      expect(PASSWORD_MAX_LENGTH).toBe(64);
+      expect(PASSWORD_MAX_LENGTH).toBe(12);
 
       // Short password (< 8 chars)
       const shortPass = validatePassword('Pass1!');
       expect(shortPass.isValid).toBe(false);
-      expect(shortPass.error).toContain('at least 8 characters');
+      expect(shortPass.error).toBe('Password must be between 8 and 12 characters.');
 
-      // Too long password (> 64 chars, e.g. 65 chars)
-      const longPass = validatePassword('A1!' + 'a'.repeat(62));
+      // Too long password (> 12 chars, e.g. 13 chars)
+      const longPass = validatePassword('Pass123!Long1');
       expect(longPass.isValid).toBe(false);
-      expect(longPass.error).toContain('cannot exceed 64 characters');
+      expect(longPass.error).toBe('Password must be between 8 and 12 characters.');
 
-      // Boundary valid 64-char password
-      const validMaxPass = validatePassword('A1!' + 'a'.repeat(61));
+      // Boundary valid 12-char password
+      const validMaxPass = validatePassword('Pass123!Safe');
       expect(validMaxPass.isValid).toBe(true);
       expect(validMaxPass.error).toBeUndefined();
 
@@ -119,25 +119,25 @@ describe('Authentication & Email Verification Security Suite', () => {
       const validMinPass = validatePassword('Valid1!a');
       expect(validMinPass.isValid).toBe(true);
 
-      // Verify no silent truncation: 75-character password remains intact and triggers rejection
-      const oversized = 'A1!' + 'x'.repeat(72);
-      expect(oversized.length).toBe(75);
+      // Verify no silent truncation: 20-character password remains intact and triggers rejection
+      const oversized = 'VeryLongPassword123!';
+      expect(oversized.length).toBe(20);
       const oversizedVal = validatePassword(oversized);
       expect(oversizedVal.isValid).toBe(false);
       expect(oversizedVal.requirements.maxLength).toBe(false);
-      expect(oversizedVal.error).toBe('Password cannot exceed 64 characters.');
+      expect(oversizedVal.error).toBe('Password must be between 8 and 12 characters.');
     });
 
     it('requires uppercase, lowercase, numeric, and special characters', () => {
-      expect(validatePassword('nouppercase123!').isValid).toBe(false);
-      expect(validatePassword('NOLOWERCASE123!').isValid).toBe(false);
-      expect(validatePassword('NoNumberSpecial!').isValid).toBe(false);
-      expect(validatePassword('NoSpecialChar123').isValid).toBe(false);
-      expect(validatePassword('StrongPass@2026').isValid).toBe(true);
+      expect(validatePassword('nouppercase1!').isValid).toBe(false);
+      expect(validatePassword('NOLOWERCASE1!').isValid).toBe(false);
+      expect(validatePassword('NoNumber!abc').isValid).toBe(false);
+      expect(validatePassword('NoSpecial123').isValid).toBe(false);
+      expect(validatePassword('Pass@2026').isValid).toBe(true);
     });
 
     it('accurately reports individual requirement states', () => {
-      const reqs = getPasswordRequirements('Spatial2026!');
+      const reqs = getPasswordRequirements('Spatial123!');
       expect(reqs.minLength).toBe(true);
       expect(reqs.maxLength).toBe(true);
       expect(reqs.hasUppercase).toBe(true);
@@ -149,9 +149,9 @@ describe('Authentication & Email Verification Security Suite', () => {
     it('calculates live password strength scores', () => {
       expect(getPasswordStrength('').score).toBe(0);
       expect(getPasswordStrength('short').label).toBe('Weak');
-      expect(getPasswordStrength('password123').label).toBe('Weak');
       expect(getPasswordStrength('Password123').label).toBe('Fair');
-      expect(getPasswordStrength('Password123!').label).toBe('Strong');
+      expect(getPasswordStrength('Pass12!a').label).toBe('Good');
+      expect(getPasswordStrength('Spatial123!').label).toBe('Strong');
     });
   });
 

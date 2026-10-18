@@ -151,7 +151,7 @@ This guide provides a structured, repeatable presentation flow for college defen
 
 **Q8: How are passwords secured and validated according to college presentation feedback?**
 > *Answer:*
-> We enforce an 8 to 64 character policy requiring at least one uppercase letter, one lowercase letter, one number, and one special character across both frontend form validation ([`src/lib/utils/validation.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/utils/validation.ts)) and auth helpers ([`src/lib/firebase/auth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/auth.ts)). Passwords exceeding 64 characters are rejected with an explicit validation error rather than being silently truncated, ensuring user intent is fully preserved. Plaintext passwords are never stored in Firestore documents, application state, or logs. Credential hashing, salt generation, and brute-force mitigation are handled entirely by Firebase Authentication.
+> We enforce an 8 to 12 character policy requiring at least one uppercase letter, one lowercase letter, one number, and one special character across both frontend form validation ([`src/lib/utils/validation.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/utils/validation.ts)) and auth helpers ([`src/lib/firebase/auth.ts`](file:///c:/Users/Yashraj%20Patil/OneDrive/Documents/FIELD%20PROJECT/spatial-furniture-ai/src/lib/firebase/auth.ts)). Passwords outside the 8 to 12 character range trigger the validation error `"Password must be between 8 and 12 characters."` rather than being silently truncated, ensuring user intent is fully preserved. Plaintext passwords are never stored in Firestore documents, application state, or logs. Credential hashing, salt generation, and brute-force mitigation are handled entirely by Firebase Authentication.
 
 ---
 
@@ -170,7 +170,7 @@ To configure a new or existing Firebase project for full email verification & pa
    - **Email enumeration protection**: Recommended enabled.
 4. **Authentication -> Settings -> Password policy** *(Identity Platform feature)*:
    - Minimum characters: **8**.
-   - Max characters: **64** (or default; must not be less than application validation).
+   - Max characters: **12** (or default; must not be less than application validation).
    - Require uppercase character: **Checked**.
    - Require lowercase character: **Checked**.
    - Require numeric character: **Checked**.

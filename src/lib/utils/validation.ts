@@ -87,7 +87,7 @@ export function normalizeFullName(name: string): string {
 }
 
 export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 64;
+export const PASSWORD_MAX_LENGTH = 12;
 
 export type PasswordStrengthLabel = 'Weak' | 'Fair' | 'Good' | 'Strong';
 
@@ -133,8 +133,8 @@ export function getPasswordRequirements(password: string): PasswordRequirements 
  * Calculates live password strength: Weak, Fair, Good, or Strong.
  * - Weak (0-25%): length < 8 or meets <= 2 character classes
  * - Fair (50%): length >= 8 and meets 3 character classes
- * - Good (75%): length >= 8 and meets all 4 character classes
- * - Strong (100%): length >= 10 and meets all 4 character classes, or long passphrase (>= 16 chars)
+ * - Good (75%): length 8-9 and meets all 4 character classes
+ * - Strong (100%): length 10-12 and meets all 4 character classes, or long passphrase
  */
 export function getPasswordStrength(password: string): PasswordStrength {
   if (!password || typeof password !== 'string' || password.length === 0) {
@@ -174,7 +174,7 @@ export function getPasswordStrength(password: string): PasswordStrength {
 
 /**
  * Validates password against the registration password policy:
- * - 8 to 64 characters
+ * - 8 to 12 characters
  * - Uppercase, Lowercase, Number, and Special character
  * Never trims or modifies the password string.
  */
@@ -182,25 +182,17 @@ export function validatePassword(password: string): PasswordValidationResult {
   if (!password || typeof password !== 'string' || password.length === 0) {
     return {
       isValid: false,
-      error: 'Password is required.',
+      error: 'Password must be between 8 and 12 characters.',
       requirements: getPasswordRequirements(''),
     };
   }
 
   const requirements = getPasswordRequirements(password);
 
-  if (password.length < PASSWORD_MIN_LENGTH) {
+  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
     return {
       isValid: false,
-      error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
-      requirements,
-    };
-  }
-
-  if (password.length > PASSWORD_MAX_LENGTH) {
-    return {
-      isValid: false,
-      error: `Password cannot exceed ${PASSWORD_MAX_LENGTH} characters.`,
+      error: 'Password must be between 8 and 12 characters.',
       requirements,
     };
   }

@@ -75,20 +75,28 @@ describe('User Validation Utilities', () => {
 
   describe('validatePassword and getPasswordRequirements', () => {
     it('accepts compliant passwords meeting all 4 criteria', () => {
-      const res = validatePassword('SpatialPass123!');
+      const res = validatePassword('Spatial123!');
       expect(res.isValid).toBe(true);
       expect(res.error).toBeUndefined();
       expect(res.requirements.minLength).toBe(true);
+      expect(res.requirements.maxLength).toBe(true);
       expect(res.requirements.hasUppercase).toBe(true);
       expect(res.requirements.hasLowercase).toBe(true);
       expect(res.requirements.hasNumber).toBe(true);
       expect(res.requirements.hasSpecial).toBe(true);
     });
 
+    it('rejects empty or missing password', () => {
+      const res = validatePassword('');
+      expect(res.isValid).toBe(false);
+      expect(res.error).toBe('Password must be between 8 and 12 characters.');
+      expect(res.requirements.minLength).toBe(false);
+    });
+
     it('rejects passwords shorter than 8 characters', () => {
       const res = validatePassword('Short1!');
       expect(res.isValid).toBe(false);
-      expect(res.error).toContain('at least 8 characters');
+      expect(res.error).toBe('Password must be between 8 and 12 characters.');
     });
 
     it('rejects passwords missing lowercase letters', () => {
@@ -104,60 +112,78 @@ describe('User Validation Utilities', () => {
     });
 
     it('rejects passwords missing numbers', () => {
-      const res = validatePassword('NoNumbersSpecial!');
+      const res = validatePassword('NoNumber!');
       expect(res.isValid).toBe(false);
       expect(res.error).toContain('number');
     });
 
     it('rejects passwords missing special characters', () => {
-      const res = validatePassword('AlphaNumeric1234');
+      const res = validatePassword('AlphaNum123');
       expect(res.isValid).toBe(false);
       expect(res.error).toContain('special character');
     });
 
-    it('enforces 8 to 64 character boundary without silent truncation', () => {
+    it('enforces 8 to 12 character boundary without silent truncation', () => {
       expect(PASSWORD_MIN_LENGTH).toBe(8);
-      expect(PASSWORD_MAX_LENGTH).toBe(64);
+      expect(PASSWORD_MAX_LENGTH).toBe(12);
 
-      // Exactly 64 characters (3 + 61)
-      const exact64 = 'A1!' + 'x'.repeat(61);
-      expect(exact64.length).toBe(64);
-      const res64 = validatePassword(exact64);
-      expect(res64.isValid).toBe(true);
-      expect(res64.requirements.maxLength).toBe(true);
+      // Boundary: Exactly 8 characters
+      const exact8 = 'Pass1!ab';
+      expect(exact8.length).toBe(8);
+      const res8 = validatePassword(exact8);
+      expect(res8.isValid).toBe(true);
+      expect(res8.requirements.minLength).toBe(true);
+      expect(res8.requirements.maxLength).toBe(true);
 
-      // 65 characters (3 + 62)
-      const exact65 = 'A1!' + 'x'.repeat(62);
-      expect(exact65.length).toBe(65);
-      const res65 = validatePassword(exact65);
-      expect(res65.isValid).toBe(false);
-      expect(res65.requirements.maxLength).toBe(false);
-      expect(res65.error).toBe('Password cannot exceed 64 characters.');
+      // Boundary: Exactly 12 characters
+      const exact12 = 'Pass123!Safe';
+      expect(exact12.length).toBe(12);
+      const res12 = validatePassword(exact12);
+      expect(res12.isValid).toBe(true);
+      expect(res12.requirements.minLength).toBe(true);
+      expect(res12.requirements.maxLength).toBe(true);
 
-      // 80 characters: verifies string is never truncated silently
-      const longInput = 'A1!' + 'x'.repeat(77);
-      expect(longInput.length).toBe(80);
+      // 7 characters: below minimum
+      const exact7 = 'Pass1!a';
+      expect(exact7.length).toBe(7);
+      const res7 = validatePassword(exact7);
+      expect(res7.isValid).toBe(false);
+      expect(res7.requirements.minLength).toBe(false);
+      expect(res7.error).toBe('Password must be between 8 and 12 characters.');
+
+      // 13 characters: above maximum
+      const exact13 = 'Pass123!Long1';
+      expect(exact13.length).toBe(13);
+      const res13 = validatePassword(exact13);
+      expect(res13.isValid).toBe(false);
+      expect(res13.requirements.maxLength).toBe(false);
+      expect(res13.error).toBe('Password must be between 8 and 12 characters.');
+
+      // 24 characters: verifies string is never truncated silently
+      const longInput = 'VeryLongPassword123!Over';
+      expect(longInput.length).toBe(24);
       const resLong = validatePassword(longInput);
       expect(resLong.isValid).toBe(false);
-      expect(resLong.error).toBe('Password cannot exceed 64 characters.');
+      expect(resLong.requirements.maxLength).toBe(false);
+      expect(resLong.error).toBe('Password must be between 8 and 12 characters.');
     });
   });
 
   describe('validateConfirmPassword', () => {
     it('validates matching passwords', () => {
-      const res = validateConfirmPassword('SecretPass123!', 'SecretPass123!');
+      const res = validateConfirmPassword('Secret123!', 'Secret123!');
       expect(res.isValid).toBe(true);
       expect(res.error).toBeUndefined();
     });
 
     it('rejects empty confirmation password', () => {
-      const res = validateConfirmPassword('SecretPass123!', '');
+      const res = validateConfirmPassword('Secret123!', '');
       expect(res.isValid).toBe(false);
       expect(res.error).toContain('Please confirm your password');
     });
 
     it('rejects mismatched confirmation password', () => {
-      const res = validateConfirmPassword('SecretPass123!', 'SecretPass999!');
+      const res = validateConfirmPassword('Secret123!', 'Secret999!');
       expect(res.isValid).toBe(false);
       expect(res.error).toContain('Passwords do not match');
     });
@@ -177,8 +203,8 @@ describe('User Validation Utilities', () => {
       expect(getPasswordStrength('Pass12!a').label).toBe('Good');
     });
 
-    it('scores 10+ character passwords with all 4 types as Strong', () => {
-      expect(getPasswordStrength('SpatialDesign2026!').label).toBe('Strong');
+    it('scores 10-12 character passwords with all 4 types as Strong', () => {
+      expect(getPasswordStrength('Spatial123!').label).toBe('Strong');
     });
 
     it('rewards long passphrases with Strong score', () => {
