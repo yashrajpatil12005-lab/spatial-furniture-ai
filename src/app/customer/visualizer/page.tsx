@@ -8,6 +8,7 @@ import { getProducts } from '@/lib/products';
 import { formatPrice } from '@/lib/utils/currency';
 import FurnitureCustomizer from '@/components/products/FurnitureCustomizer';
 import VisualizationPanel from '@/components/ai/VisualizationPanel';
+import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
 
 function VisualizerContent() {
   const searchParams = useSearchParams();
@@ -262,14 +263,16 @@ function VisualizerContent() {
 
 export default function CustomerVisualizerPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#10B981]"></div>
-        </div>
-      }
-    >
-      <VisualizerContent />
-    </Suspense>
+    <ProtectedRoute allowedRoles={['customer', 'admin']}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#10B981]"></div>
+          </div>
+        }
+      >
+        <VisualizerContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

@@ -19,7 +19,26 @@ function VerifyEmailContent() {
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const initialSent = sessionStorage.getItem('initial_verification_sent');
+      const initialError = sessionStorage.getItem('initial_verification_error');
+      if (initialSent === 'false') {
+        sessionStorage.removeItem('initial_verification_sent');
+        sessionStorage.removeItem('initial_verification_error');
+        return {
+          type: 'error',
+          text: `We could not automatically dispatch the verification email (${initialError || 'network error'}). Please click "Resend Verification Email" below to receive your link.`,
+        };
+      } else if (initialSent === 'true') {
+        sessionStorage.removeItem('initial_verification_sent');
+      }
+    } catch {
+      // Ignore sessionStorage errors
+    }
+    return null;
+  });
   const [isManuallyVerified, setIsManuallyVerified] = useState(false);
 
   const isVerified = isManuallyVerified || Boolean(user?.emailVerified);

@@ -410,6 +410,15 @@ export default function VisualizationPanel({ product, customization }: Visualiza
               </div>
             )}
 
+            {user && !user.emailVerified && (
+              <div className="p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl text-xs text-[#92400E] flex items-center justify-between">
+                <span>Email verification required to run AI room analysis on your space.</span>
+                <Link href="/verify-email" className="font-bold underline hover:text-[#78350F] ml-2 shrink-0">
+                  Verify Email
+                </Link>
+              </div>
+            )}
+
             {/* Action 1: Analyze Room Layout (Primary Action) */}
             <button
               onClick={handleAnalyze}

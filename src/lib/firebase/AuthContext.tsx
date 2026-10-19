@@ -19,6 +19,7 @@ interface AuthContextType {
   userData: UserData | null;
   loading: boolean;
   reloadUser: () => Promise<User | null>;
+  authVersion?: number;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,24 +27,26 @@ const AuthContext = createContext<AuthContextType>({
   userData: null,
   loading: true,
   reloadUser: async () => null,
+  authVersion: 0,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authVersion, setAuthVersion] = useState(0);
 
   const reloadUser = async (): Promise<User | null> => {
     const currentUser = auth.currentUser;
     if (currentUser) {
       await currentUser.reload();
       if (currentUser.emailVerified) {
+        // Force refresh the Firebase ID token so new token claims contain email_verified: true
         await currentUser.getIdToken(true);
       }
-      // Clone user preserving prototype methods to trigger React state updates
-      const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(currentUser)), currentUser);
-      setUser(updatedUser);
-      return updatedUser;
+      setUser(currentUser);
+      setAuthVersion((v) => v + 1);
+      return currentUser;
     }
     return null;
   };
@@ -90,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, reloadUser }}>
+    <AuthContext.Provider value={{ user, userData, loading, reloadUser, authVersion }}>
       {children}
     </AuthContext.Provider>
   );

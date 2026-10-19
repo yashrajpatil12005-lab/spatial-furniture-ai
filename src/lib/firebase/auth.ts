@@ -98,8 +98,16 @@ export const registerUser = async (
     // 3. Send Firebase email verification immediately after successful registration
     try {
       await sendEmailVerification(user);
-    } catch (emailErr) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('initial_verification_sent', 'true');
+        sessionStorage.removeItem('initial_verification_error');
+      }
+    } catch (emailErr: unknown) {
       console.warn('[auth] Could not dispatch initial verification email automatically:', emailErr);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('initial_verification_sent', 'false');
+        sessionStorage.setItem('initial_verification_error', getFriendlyAuthErrorMessage(emailErr));
+      }
     }
 
     return userCredential;

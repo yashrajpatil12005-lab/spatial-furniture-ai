@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { NextRequest } from 'next/server';
 import { requireAuth, verifyAuthToken } from '@/lib/firebase/serverAuth';
+import { validatePassword } from '@/lib/utils/validation';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCeZ7SObn8PZK7Ckc_VU6yRwaG6qlPVbOw",
@@ -22,10 +23,35 @@ describe('Live Firebase Email Verification & Token Security Integration', () => 
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   const auth = getAuth(app);
 
-  it('successfully creates a real user in Firebase Auth, dispatches a real verification email, and verifies token protection', async () => {
+  it('strictly validates password boundary lengths 7, 8, 12, and 13 characters', () => {
+    // 7 characters: must fail
+    const res7 = validatePassword('Pass1!a');
+    expect(res7.isValid).toBe(false);
+    expect(res7.error).toBe('Password must be between 8 and 12 characters.');
+
+    // 8 characters: boundary minimum, must pass
+    const res8 = validatePassword('Pass1!ab');
+    expect(res8.isValid).toBe(true);
+    expect(res8.error).toBeUndefined();
+
+    // 12 characters: boundary maximum, must pass
+    const res12 = validatePassword('Pass123!Safe');
+    expect(res12.isValid).toBe(true);
+    expect(res12.error).toBeUndefined();
+
+    // 13 characters: must fail
+    const res13 = validatePassword('Pass123!Long1');
+    expect(res13.isValid).toBe(false);
+    expect(res13.error).toBe('Password must be between 8 and 12 characters.');
+  });
+
+  it('successfully creates a real user in Firebase Auth with compliant 8-12 char password, dispatches verification email, and verifies server protection', async () => {
     const timestamp = Date.now();
     const testEmail = `spatial.viva.test.${timestamp}@gmail.com`;
-    const testPassword = `LiveSecurePass@${timestamp}!`;
+    // Compliant 11-character password meeting all 4 complexity rules
+    const testPassword = `LivePass12!`;
+    expect(testPassword.length).toBeGreaterThanOrEqual(8);
+    expect(testPassword.length).toBeLessThanOrEqual(12);
 
     let userCredential;
     try {
