@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { loginUser, sendVerificationEmail, logoutUser, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
 import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [resendSuccess, setResendSuccess] = useState('');
   const [resending, setResending] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVerifiedQuery = searchParams.get('verified') === 'true';
 
   // Cooldown timer for resend button
   useEffect(() => {
@@ -122,6 +124,20 @@ export default function LoginPage() {
             Sign in to access your SpatialAI portal
           </p>
         </div>
+
+        {/* Verification Success Notice if redirected from verification handler */}
+        {isVerifiedQuery && !unverifiedUser && (
+          <div
+            id="verified-login-banner"
+            role="status"
+            className="p-4 rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] text-xs text-[#047857] flex items-center gap-2.5 font-medium"
+          >
+            <svg className="w-5 h-5 text-[#10B981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Email verified successfully! You can now sign in with your credentials to access your workspace.</span>
+          </div>
+        )}
 
         {/* Unverified Account Notice & Actions */}
         {unverifiedUser && (
@@ -265,5 +281,19 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[82vh] flex items-center justify-center bg-[#F8FAFC]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

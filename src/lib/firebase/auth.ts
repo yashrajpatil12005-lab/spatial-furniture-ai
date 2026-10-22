@@ -3,6 +3,8 @@ import {
   signInWithEmailAndPassword, 
   signOut,
   sendEmailVerification,
+  applyActionCode,
+  ActionCodeSettings,
   User,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -14,6 +16,34 @@ import {
 } from '@/lib/utils/validation';
 
 export type AllowedRegistrationRole = 'customer' | 'retailer';
+
+/**
+ * Returns the canonical base URL for the current environment.
+ * Ensures localhost works in development and the deployed domain works in production.
+ */
+export function getAppBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                 (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : undefined) ||
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+  if (envUrl) {
+    return envUrl.replace(/\/$/, '');
+  }
+  return 'http://localhost:3000';
+}
+
+/**
+ * Constructs Firebase ActionCodeSettings for email verification with a dynamic return URL.
+ */
+export function getActionCodeSettings(continuePath: string = '/auth/action'): ActionCodeSettings {
+  const baseUrl = getAppBaseUrl();
+  return {
+    url: `${baseUrl}${continuePath}`,
+    handleCodeInApp: true,
+  };
+}
 
 /**
  * Maps Firebase Auth error codes to safe, informative user-facing messages.
@@ -42,6 +72,12 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
         return 'Network connection issue. Please check your internet connection.';
       case 'auth/requires-recent-login':
         return 'Please sign in again to verify your identity.';
+      case 'auth/expired-action-code':
+        return 'This verification link has expired. Please request a new verification email.';
+      case 'auth/invalid-action-code':
+        return 'This verification link is invalid or has already been used. Please check if your email is already verified, or request a new verification link.';
+      case 'auth/unauthorized-continue-uri':
+        return 'The verification continue URL domain is not authorized in Firebase Console settings.';
       default:
         break;
     }
@@ -95,9 +131,9 @@ export const registerUser = async (
 
     await setDoc(doc(db, 'users', user.uid), userData);
 
-    // 3. Send Firebase email verification immediately after successful registration
+    // 3. Send Firebase email verification with ActionCodeSettings immediately after successful registration
     try {
-      await sendEmailVerification(user);
+      await sendVerificationEmail(user);
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('initial_verification_sent', 'true');
         sessionStorage.removeItem('initial_verification_error');
@@ -118,18 +154,40 @@ export const registerUser = async (
   }
 };
 
-// 2. Send / resend email verification
-export const sendVerificationEmail = async (user: User): Promise<void> => {
+// 2. Send / resend email verification with ActionCodeSettings
+export const sendVerificationEmail = async (
+  user: User,
+  actionCodeSettings?: ActionCodeSettings
+): Promise<void> => {
+  const settings = actionCodeSettings ?? getActionCodeSettings();
   try {
-    await sendEmailVerification(user);
+    await sendEmailVerification(user, settings);
   } catch (error: unknown) {
-    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
-    console.error("Error sending verification email with code:", errorCode);
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : '';
+    // Graceful fallback if continue URL domain is not yet authorized in Firebase Console
+    if (errorCode === 'auth/unauthorized-continue-uri') {
+      console.warn('[auth] Continue URL domain unauthorized in Firebase Console. Retrying without continue URL:', settings.url);
+      await sendEmailVerification(user);
+      return;
+    }
+    const errCode = errorCode || 'unknown';
+    console.error("Error sending verification email with code:", errCode);
     throw error;
   }
 };
 
-// 3. Refresh user token and verify status
+// 3. Custom Action Handler: Apply out-of-band verification code
+export const applyVerificationCode = async (oobCode: string): Promise<void> => {
+  try {
+    await applyActionCode(auth, oobCode);
+  } catch (error: unknown) {
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
+    console.error("Error applying verification action code:", errorCode);
+    throw error;
+  }
+};
+
+// 4. Refresh user token and verify status
 export const checkEmailVerification = async (user: User): Promise<boolean> => {
   try {
     await user.reload();

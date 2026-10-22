@@ -10,18 +10,58 @@ import { NextRequest } from 'next/server';
 import { requireAuth, verifyAuthToken } from '@/lib/firebase/serverAuth';
 import { validatePassword } from '@/lib/utils/validation';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCeZ7SObn8PZK7Ckc_VU6yRwaG6qlPVbOw",
-  authDomain: "spatial-furniture-ai.firebaseapp.com",
-  projectId: "spatial-furniture-ai",
-};
+// Dynamically resolve and validate live Firebase configuration from environment
+function getLiveFirebaseConfig() {
+  const rawKey = (process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '').trim();
+  const rawProject = (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '').trim();
+  const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() || 
+    (rawProject ? `${rawProject}.firebaseapp.com` : undefined);
+
+  const isConfigured = Boolean(
+    rawKey &&
+    rawKey !== 'dummy-key' &&
+    rawKey !== 'your_firebase_api_key' &&
+    !rawKey.startsWith('your_') &&
+    rawKey.length > 20 &&
+    rawProject &&
+    rawProject !== 'dummy-project' &&
+    rawProject !== 'your_project_id' &&
+    !rawProject.startsWith('your_')
+  );
+
+  return {
+    isConfigured,
+    apiKey: rawKey,
+    projectId: rawProject,
+    authDomain,
+  };
+}
+
+const liveConfig = getLiveFirebaseConfig();
+
+if (!liveConfig.isConfigured) {
+  console.info(
+    '[live-firebase.integration.test.ts] Skipping live Firebase network test: ' +
+    'Valid NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are not configured.'
+  );
+}
+
+function getLiveAuth() {
+  const config = getLiveFirebaseConfig();
+  if (!config.isConfigured) {
+    throw new Error('Live Firebase configuration is missing or placeholder.');
+  }
+  const app = !getApps().some((a) => a.name === 'live-integration')
+    ? initializeApp({
+        apiKey: config.apiKey,
+        authDomain: config.authDomain,
+        projectId: config.projectId,
+      }, 'live-integration')
+    : getApp('live-integration');
+  return getAuth(app);
+}
 
 describe('Live Firebase Email Verification & Token Security Integration', () => {
-  process.env.NEXT_PUBLIC_FIREBASE_API_KEY = firebaseConfig.apiKey;
-  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = firebaseConfig.projectId;
-
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
 
   it('strictly validates password boundary lengths 7, 8, 12, and 13 characters', () => {
     // 7 characters: must fail
@@ -45,19 +85,32 @@ describe('Live Firebase Email Verification & Token Security Integration', () => 
     expect(res13.error).toBe('Password must be between 8 and 12 characters.');
   });
 
-  it('successfully creates a real user in Firebase Auth with compliant 8-12 char password, dispatches verification email, and verifies server protection', async () => {
-    const timestamp = Date.now();
-    const testEmail = `spatial.viva.test.${timestamp}@gmail.com`;
-    // Compliant 11-character password meeting all 4 complexity rules
-    const testPassword = `LivePass12!`;
-    expect(testPassword.length).toBeGreaterThanOrEqual(8);
-    expect(testPassword.length).toBeLessThanOrEqual(12);
+  it.skipIf(!liveConfig.isConfigured)(
+    'successfully creates a real user in Firebase Auth with compliant 8-12 char password, dispatches verification email, and verifies server protection', 
+    async (ctx) => {
+      const config = getLiveFirebaseConfig();
+      if (!config.isConfigured) {
+        console.info(
+          '[live-firebase.integration.test.ts] Skipping live Firebase network test: ' +
+          'Valid NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are not configured.'
+        );
+        ctx.skip();
+        return;
+      }
 
-    let userCredential;
-    try {
-      // 1. Create a real user in Firebase Auth
-      userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
-      const user = userCredential.user;
+      const auth = getLiveAuth();
+      const timestamp = Date.now();
+      const testEmail = `spatial.viva.test.${timestamp}@gmail.com`;
+      // Compliant 11-character password meeting all 4 complexity rules
+      const testPassword = `LivePass12!`;
+      expect(testPassword.length).toBeGreaterThanOrEqual(8);
+      expect(testPassword.length).toBeLessThanOrEqual(12);
+
+      let userCredential;
+      try {
+        // 1. Create a real user in Firebase Auth
+        userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+        const user = userCredential.user;
 
       expect(user.uid).toBeDefined();
       expect(user.email).toBe(testEmail);

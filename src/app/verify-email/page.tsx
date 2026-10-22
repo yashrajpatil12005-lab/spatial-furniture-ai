@@ -16,6 +16,15 @@ function VerifyEmailContent() {
   const queryEmail = searchParams.get('email') || '';
   const displayEmail = user?.email || queryEmail || 'your email address';
 
+  // If action code parameters are present, forward to dedicated action handler
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    const oobCode = searchParams.get('oobCode');
+    if (mode && oobCode) {
+      router.replace(`/auth/action?${searchParams.toString()}`);
+    }
+  }, [searchParams, router]);
+
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
