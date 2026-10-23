@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Force refresh the Firebase ID token so new token claims contain email_verified: true
         await currentUser.getIdToken(true);
       }
-      setUser(currentUser);
+      // Clone user prototype delegate to produce a fresh object reference so React detects state change
+      const updatedUser = Object.assign(Object.create(Object.getPrototypeOf(currentUser)), currentUser);
+      setUser(updatedUser);
       setAuthVersion((v) => v + 1);
       return currentUser;
     }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { logoutUser, sendVerificationEmail, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -97,7 +98,8 @@ function VerifyEmailContent() {
 
   // Check verification status
   const handleCheckVerification = async () => {
-    if (!user) {
+    const currentUser = auth.currentUser || user;
+    if (!currentUser) {
       setStatusMessage({
         type: 'info',
         text: 'Please sign in to check your verification status.',
@@ -142,7 +144,9 @@ function VerifyEmailContent() {
   const handleResendEmail = async () => {
     if (resendCooldown > 0 || isResending) return;
 
-    if (!user) {
+    const currentUser = auth.currentUser || user;
+
+    if (!currentUser) {
       setStatusMessage({
         type: 'info',
         text: 'Session expired. Please sign in to request another verification email.',
@@ -151,11 +155,11 @@ function VerifyEmailContent() {
       return;
     }
 
-    if (user.emailVerified) {
+    if (currentUser.emailVerified) {
       setIsManuallyVerified(true);
       setStatusMessage({
         type: 'success',
-        text: 'Your email is already verified!',
+        text: 'Your email is already verified! Redirecting to your dashboard...',
       });
       handleRedirectAfterVerification();
       return;
@@ -165,11 +169,11 @@ function VerifyEmailContent() {
     setStatusMessage(null);
 
     try {
-      await sendVerificationEmail(user);
+      await sendVerificationEmail(currentUser);
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setStatusMessage({
         type: 'success',
-        text: `Verification email dispatched! Please check ${displayEmail} (including Spam/Junk folder).`,
+        text: `Verification email sent! Please check ${displayEmail} (including Spam/Junk folder).`,
       });
     } catch (err: unknown) {
       const message = getFriendlyAuthErrorMessage(err);

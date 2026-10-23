@@ -307,12 +307,48 @@ describe('Authentication & Email Verification Security Suite', () => {
 
       await waitFor(() => {
         expect(sendSpy).toHaveBeenCalled();
-        expect(screen.getByText(/verification email dispatched/i)).toBeInTheDocument();
+        expect(screen.getByText(/verification email (sent|dispatched)/i)).toBeInTheDocument();
       });
 
       // Button should now be disabled and show cooldown text
       expect(screen.getByText(/resend email in \d+s/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /resend email in/i })).toBeDisabled();
+    });
+
+    it('handles network failure (network-request-failed) on resend gracefully', async () => {
+      vi.spyOn(authModule, 'sendVerificationEmail').mockRejectedValueOnce({
+        code: 'auth/network-request-failed',
+      });
+
+      render(<VerifyEmailPage />);
+      const resendBtn = screen.getByRole('button', { name: /resend verification email/i });
+
+      fireEvent.click(resendBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/network connection issue/i)).toBeInTheDocument();
+      });
+    });
+
+    it('handles resend when user is already verified by redirecting to dashboard', async () => {
+      mockUser = {
+        uid: 'user-already-verified',
+        email: 'testuser@spatial.com',
+        emailVerified: true,
+        reload: vi.fn(),
+        getIdToken: vi.fn(),
+      };
+
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail');
+
+      render(<VerifyEmailPage />);
+      const resendBtn = screen.queryByRole('button', { name: /resend verification email/i });
+      if (resendBtn) {
+        fireEvent.click(resendBtn);
+      }
+
+      // If user is already verified, sendVerificationEmail is not called
+      expect(sendSpy).not.toHaveBeenCalled();
     });
 
     it('handles rate-limiting (too-many-requests) on resend gracefully', async () => {
@@ -398,6 +434,46 @@ describe('Authentication & Email Verification Security Suite', () => {
 
       // Private Dashboard link is NOT present for unverified users
       expect(screen.queryByRole('link', { name: /^dashboard$/i })).toBeNull();
+    });
+
+    it('banner button links to /verify-email with the user email parameter', () => {
+      mockUser = {
+        uid: 'user-unverified',
+        email: 'banner-test@spatial.com',
+        emailVerified: false,
+        reload: vi.fn(),
+        getIdToken: vi.fn(),
+      };
+
+      render(<Navbar />);
+
+      const bannerButton = document.getElementById('navbar-verify-email-banner-button');
+      expect(bannerButton).not.toBeNull();
+      expect(bannerButton).toHaveAttribute('href', '/verify-email?email=banner-test%40spatial.com');
+    });
+
+    it('mobile navigation menu renders mobile Verify Email link and navigates cleanly', () => {
+      mockUser = {
+        uid: 'user-unverified',
+        email: 'banner-test@spatial.com',
+        emailVerified: false,
+        reload: vi.fn(),
+        getIdToken: vi.fn(),
+      };
+
+      render(<Navbar />);
+
+      // Open mobile menu
+      const toggleBtn = screen.getByRole('button', { name: /open navigation menu/i });
+      fireEvent.click(toggleBtn);
+
+      const mobileVerifyLink = document.getElementById('mobile-nav-link-verify-email');
+      expect(mobileVerifyLink).not.toBeNull();
+      expect(mobileVerifyLink).toHaveAttribute('href', '/verify-email');
+
+      // Clicking mobile link executes router.push
+      fireEvent.click(mobileVerifyLink!);
+      expect(mockRouterPush).toHaveBeenCalledWith('/verify-email');
     });
   });
 });

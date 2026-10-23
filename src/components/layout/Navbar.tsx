@@ -20,7 +20,7 @@ const getHashSnapshot = () => (typeof window !== 'undefined' ? window.location.h
 const getServerHashSnapshot = () => '';
 
 export default function Navbar() {
-  const { user, userData, loading } = useAuth();
+  const { user, userData, loading, authVersion } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -252,9 +252,10 @@ export default function Navbar() {
     <nav
       id="main-navigation"
       aria-label="Main Navigation"
-      className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs transition-all"
+      data-auth-version={authVersion}
+      className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs transition-all"
     >
-      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 h-full">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 h-16">
         <div className="flex justify-between h-full items-center">
           
           {/* Brand Logo */}
@@ -597,20 +598,23 @@ export default function Navbar() {
         <div
           id="navbar-verification-banner"
           role="alert"
-          className="bg-[#FFFBEB] border-b border-[#FDE68A] text-[#92400E] px-4 py-1.5 text-xs shadow-2xs"
+          className="bg-[#FFFBEB] border-t border-b border-[#FDE68A] text-[#92400E] px-4 py-2 text-xs shadow-2xs relative z-50 pointer-events-auto"
         >
-          <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-2">
+          <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 truncate">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#F59E0B] shrink-0 animate-pulse" />
               <span className="truncate">
-                Email verification pending for <strong>{user.email}</strong>.
+                Email verification pending for <strong className="font-semibold">{user.email}</strong>.
               </span>
             </div>
             <Link
+              id="navbar-verify-email-banner-button"
               href={`/verify-email?email=${encodeURIComponent(user.email || '')}`}
-              className="font-bold underline text-[#B45309] hover:text-[#78350F] shrink-0 text-[11px]"
+              aria-label="Verify email address"
+              className="inline-flex items-center gap-1.5 font-bold px-3.5 py-1 rounded-lg bg-[#B45309] text-white hover:bg-[#92400E] active:bg-[#78350F] transition-colors shrink-0 text-xs shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#B45309]/50"
             >
-              Verify Email &rarr;
+              <span>Verify Email</span>
+              <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
         </div>
@@ -645,11 +649,17 @@ export default function Navbar() {
           <div className="space-y-1">
             {currentNavLinks.map((link) => {
               const active = isActive(link.href);
+              const linkId = `mobile-nav-link-${link.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
               return (
                 <Link
                   key={`mobile-nav-${link.label}-${link.href}`}
                   href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
+                  id={linkId}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMobileMenuOpen(false);
+                    router.push(link.href);
+                  }}
                   className={`block px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     active
                       ? 'text-[#047857] bg-[#ECFDF5] font-semibold border border-[#A7F3D0]/70'

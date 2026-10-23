@@ -153,13 +153,52 @@ describe('Firebase Email Verification Return Flow & Action Handler Suite', () =>
       expect(spy).toHaveBeenLastCalledWith(mockUser);
     });
 
+    it('falls back to sending without ActionCodeSettings if settings fail with argument-error or invalid-continue-uri', async () => {
+      const mockUser = {
+        uid: 'user-456',
+        email: 'fallback@spatial.com',
+        emailVerified: false,
+      } as unknown as firebaseAuth.User;
+
+      const spy = vi.spyOn(firebaseAuth, 'sendEmailVerification')
+        .mockRejectedValueOnce({ code: 'auth/argument-error' })
+        .mockResolvedValueOnce(undefined);
+
+      await sendVerificationEmail(mockUser);
+
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenLastCalledWith(mockUser);
+    });
+
+    it('throws auth/no-current-user error when no authenticated user is available', async () => {
+      await expect(sendVerificationEmail(null)).rejects.toMatchObject({
+        code: 'auth/no-current-user',
+      });
+    });
+
+    it('skips sending verification email if user is already verified', async () => {
+      const verifiedUser = {
+        uid: 'user-verified',
+        email: 'verified@spatial.com',
+        emailVerified: true,
+      } as unknown as firebaseAuth.User;
+
+      const spy = vi.spyOn(firebaseAuth, 'sendEmailVerification');
+      await sendVerificationEmail(verifiedUser);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
     it('maps action code error codes to friendly messages', () => {
+      expect(getFriendlyAuthErrorMessage({ code: 'auth/no-current-user' }))
+        .toBe('No authenticated user session found. Please sign in to verify your email.');
       expect(getFriendlyAuthErrorMessage({ code: 'auth/expired-action-code' }))
         .toBe('This verification link has expired. Please request a new verification email.');
       expect(getFriendlyAuthErrorMessage({ code: 'auth/invalid-action-code' }))
         .toBe('This verification link is invalid or has already been used. Please check if your email is already verified, or request a new verification link.');
       expect(getFriendlyAuthErrorMessage({ code: 'auth/unauthorized-continue-uri' }))
         .toBe('The verification continue URL domain is not authorized in Firebase Console settings.');
+      expect(getFriendlyAuthErrorMessage({ code: 'auth/network-request-failed' }))
+        .toBe('Network connection issue. Please check your internet connection.');
     });
 
     it('applyVerificationCode calls firebase applyActionCode', async () => {

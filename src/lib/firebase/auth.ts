@@ -53,6 +53,8 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'code' in error) {
     const code = (error as { code: string }).code;
     switch (code) {
+      case 'auth/no-current-user':
+        return 'No authenticated user session found. Please sign in to verify your email.';
       case 'auth/email-already-in-use':
         return 'An account with this email address already exists.';
       case 'auth/invalid-email':
@@ -78,6 +80,10 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
         return 'This verification link is invalid or has already been used. Please check if your email is already verified, or request a new verification link.';
       case 'auth/unauthorized-continue-uri':
         return 'The verification continue URL domain is not authorized in Firebase Console settings.';
+      case 'auth/invalid-continue-uri':
+        return 'The verification continue URL provided is invalid.';
+      case 'auth/quota-exceeded':
+        return 'Daily email verification quota exceeded. Please try again later or contact support.';
       default:
         break;
     }
@@ -154,22 +160,45 @@ export const registerUser = async (
   }
 };
 
-// 2. Send / resend email verification with ActionCodeSettings
+// 2. Send / resend email verification with ActionCodeSettings and graceful fallback
 export const sendVerificationEmail = async (
-  user: User,
+  user?: User | null,
   actionCodeSettings?: ActionCodeSettings
 ): Promise<void> => {
+  // Resolve the authoritative Firebase User object
+  const targetUser = user || auth.currentUser;
+  if (!targetUser) {
+    const error = new Error('No authenticated user session found. Please sign in to verify your email.');
+    (error as unknown as { code: string }).code = 'auth/no-current-user';
+    throw error;
+  }
+
+  // If already verified, do not re-send
+  if (targetUser.emailVerified) {
+    return;
+  }
+
   const settings = actionCodeSettings ?? getActionCodeSettings();
   try {
-    await sendEmailVerification(user, settings);
+    await sendEmailVerification(targetUser, settings);
   } catch (error: unknown) {
     const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : '';
-    // Graceful fallback if continue URL domain is not yet authorized in Firebase Console
-    if (errorCode === 'auth/unauthorized-continue-uri') {
-      console.warn('[auth] Continue URL domain unauthorized in Firebase Console. Retrying without continue URL:', settings.url);
-      await sendEmailVerification(user);
+    
+    // Graceful fallback if continue URL domain is not yet authorized in Firebase Console,
+    // or if actionCodeSettings encounters continue URL or dynamic link configuration issues.
+    const isSettingsRelatedError = 
+      errorCode === 'auth/unauthorized-continue-uri' ||
+      errorCode === 'auth/invalid-continue-uri' ||
+      errorCode === 'auth/missing-continue-uri' ||
+      errorCode === 'auth/argument-error' ||
+      errorCode === 'auth/dynamic-link-not-activated';
+
+    if (isSettingsRelatedError) {
+      console.warn(`[auth] Continue URL / actionCodeSettings rejected with code ${errorCode}. Retrying default sendEmailVerification...`);
+      await sendEmailVerification(targetUser);
       return;
     }
+
     const errCode = errorCode || 'unknown';
     console.error("Error sending verification email with code:", errCode);
     throw error;
