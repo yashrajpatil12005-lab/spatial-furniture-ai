@@ -116,7 +116,7 @@ function VerifyEmailContent() {
         setIsManuallyVerified(true);
         setStatusMessage({
           type: 'success',
-          text: 'Email verified successfully! Preparing your spatial workspace...',
+          text: 'Your email has been confirmed! Preparing your spatial workspace...',
         });
         setTimeout(() => {
           handleRedirectAfterVerification();
@@ -194,25 +194,42 @@ function VerifyEmailContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-[75vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]"></div>
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#0B0F19]">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[82vh] flex items-center justify-center bg-[#F8FAFC] py-12 px-5 sm:px-8 lg:px-10">
-      <div className="max-w-lg w-full space-y-6 bg-white p-8 sm:p-10 rounded-2xl border border-[#E2E8F0] card-shadow">
-        
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#0B0F19] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background Ambient Glow & Lighting */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" 
+      />
+      <div 
+        aria-hidden="true" 
+        className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" 
+      />
+
+      <div className="max-w-lg w-full space-y-6 bg-[#111827]/90 border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative backdrop-blur-xl">
+        {/* Top Amber Accent Hairline */}
+        <div 
+          aria-hidden="true" 
+          className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-amber-500/70 to-transparent" 
+        />
+
         {/* Header Icon & Title */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] mb-4 shadow-xs">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-4 shadow-[0_0_25px_rgba(245,158,11,0.2)]">
             {isVerified ? (
-              <svg className="w-7 h-7 text-[#047857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md">
+                <svg className="w-6 h-6 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             ) : (
-              <svg className="w-7 h-7 text-[#047857]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             )}
@@ -221,20 +238,20 @@ function VerifyEmailContent() {
           <div className="flex items-center justify-center gap-2 mb-2">
             <span
               id="verification-status-badge"
-              className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+              className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
                 isVerified
-                  ? 'bg-[#ECFDF5] text-[#047857] border-[#A7F3D0]'
-                  : 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]'
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
               }`}
             >
               {isVerified ? 'Email Verified' : 'Verification Pending'}
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-[#111827]">
-            {isVerified ? 'Account Verified!' : 'Verify Your Email Address'}
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            {isVerified ? 'Email Verified Successfully' : 'Verify Your Email Address'}
           </h1>
-          <p className="mt-2 text-sm text-[#475569]">
+          <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
             {isVerified
               ? 'Thank you for verifying your email. You can now access all protected features.'
               : 'To secure your account and access spatial room visualization, please verify your email address.'}
@@ -242,11 +259,11 @@ function VerifyEmailContent() {
         </div>
 
         {/* Registered Email Callout */}
-        <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-center space-y-1">
-          <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-center space-y-1">
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             Verification link sent to
           </p>
-          <p id="registered-email-address" className="text-sm font-bold text-[#111827] font-mono break-all">
+          <p id="registered-email-address" className="text-sm font-bold text-white font-mono break-all">
             {displayEmail}
           </p>
         </div>
@@ -256,27 +273,27 @@ function VerifyEmailContent() {
           <div
             id="verification-status-alert"
             role="status"
-            className={`p-4 rounded-xl border text-xs font-medium ${
+            className={`p-4 rounded-2xl border text-xs font-medium ${
               effectiveStatusMessage.type === 'success'
-                ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#047857]'
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
                 : effectiveStatusMessage.type === 'error'
-                ? 'bg-[#FEF2F2] border-red-200 text-[#EF4444]'
-                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
+                ? 'bg-red-500/15 border-red-500/30 text-red-300'
+                : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
             }`}
           >
             <div className="flex items-start gap-2.5">
               {effectiveStatusMessage.type === 'success' && (
-                <svg className="w-4 h-4 shrink-0 text-[#10B981] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               )}
               {effectiveStatusMessage.type === 'error' && (
-                <svg className="w-4 h-4 shrink-0 text-[#EF4444] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 shrink-0 text-red-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
               {effectiveStatusMessage.type === 'info' && (
-                <svg className="w-4 h-4 shrink-0 text-[#3B82F6] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
@@ -288,27 +305,27 @@ function VerifyEmailContent() {
         {/* Instructions Steps */}
         {!isVerified && (
           <div className="space-y-3 pt-1">
-            <h2 className="text-xs font-semibold text-[#111827] uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
               Verification Steps:
             </h2>
-            <ol className="space-y-2 text-xs text-[#475569]">
+            <ol className="space-y-2.5 text-xs text-slate-300">
               <li className="flex items-start gap-2.5">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#ECFDF5] text-[#047857] font-bold text-[11px] flex items-center justify-center border border-[#A7F3D0]">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold text-[11px] flex items-center justify-center border border-amber-500/30">
                   1
                 </span>
-                <span>Open your email inbox and locate the message from <strong>Spatial Furniture AI</strong>.</span>
+                <span>Open your email inbox and locate the message from <strong className="text-white">Spatial Furniture AI</strong>.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#ECFDF5] text-[#047857] font-bold text-[11px] flex items-center justify-center border border-[#A7F3D0]">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold text-[11px] flex items-center justify-center border border-amber-500/30">
                   2
                 </span>
-                <span>Click the official verification link provided in the email.</span>
+                <span>Click the amber <strong className="text-amber-400">&quot;Verify Email Address&quot;</strong> button in the email.</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#ECFDF5] text-[#047857] font-bold text-[11px] flex items-center justify-center border border-[#A7F3D0]">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold text-[11px] flex items-center justify-center border border-amber-500/30">
                   3
                 </span>
-                <span>Return to this window and click <strong>&quot;I&apos;ve Verified My Email&quot;</strong> below.</span>
+                <span>Return to this window and click <strong className="text-white">&quot;I&apos;ve Verified My Email&quot;</strong> below.</span>
               </li>
             </ol>
           </div>
@@ -323,11 +340,11 @@ function VerifyEmailContent() {
                 type="button"
                 onClick={handleCheckVerification}
                 disabled={isChecking}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#10B981] hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#10B981] focus:ring-offset-2 disabled:opacity-50 transition-all shadow-sm"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition-all shadow-lg shadow-amber-500/25 cursor-pointer"
               >
                 {isChecking ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent"></div>
                     <span>Checking Status...</span>
                   </>
                 ) : (
@@ -345,11 +362,11 @@ function VerifyEmailContent() {
                 type="button"
                 onClick={handleResendEmail}
                 disabled={isResending || resendCooldown > 0}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] hover:bg-[#D1FAE5] focus:outline-none focus:ring-2 focus:ring-[#10B981] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium text-amber-400 bg-slate-800/80 border border-amber-500/30 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isResending ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#047857] border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-amber-400 border-t-transparent"></div>
                     <span>Sending email...</span>
                   </>
                 ) : resendCooldown > 0 ? (
@@ -369,16 +386,16 @@ function VerifyEmailContent() {
               id="continue-to-portal-btn"
               type="button"
               onClick={handleRedirectAfterVerification}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#10B981] hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#10B981] focus:ring-offset-2 transition-all shadow-sm"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all shadow-lg shadow-amber-500/25 cursor-pointer"
             >
               <span>Continue to Workspace &rarr;</span>
             </button>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0] text-xs">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
             <Link
               href="/customer/products"
-              className="text-[#64748B] hover:text-[#111827] transition-colors"
+              className="text-slate-400 hover:text-amber-400 transition-colors"
             >
               &larr; Browse Public Catalog
             </Link>
@@ -387,17 +404,25 @@ function VerifyEmailContent() {
               id="verification-signout-btn"
               type="button"
               onClick={handleSignOut}
-              className="text-[#EF4444] hover:underline font-medium"
+              className="text-red-400 hover:underline font-medium cursor-pointer"
             >
               Sign Out / Switch Account
             </button>
           </div>
         </div>
 
-        {/* Troubleshooting Accordion / Help */}
-        <div className="text-[11px] text-[#64748B] bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] space-y-1">
-          <p className="font-semibold text-[#475569]">Didn&apos;t receive the email?</p>
-          <ul className="list-disc pl-4 space-y-0.5">
+        {/* Troubleshooting & Email Template Help */}
+        <div className="text-[11px] text-slate-400 bg-slate-800/40 p-4 rounded-2xl border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-slate-300">Didn&apos;t receive the email?</p>
+            <Link 
+              href="/auth/email-preview" 
+              className="text-amber-400 hover:underline font-medium text-[11px]"
+            >
+              Preview Email Template &rarr;
+            </Link>
+          </div>
+          <ul className="list-disc pl-4 space-y-1 text-slate-400">
             <li>Check your <strong>Spam</strong> or <strong>Junk</strong> folder.</li>
             <li>Verification emails can take up to 1-2 minutes to arrive.</li>
             <li>Verify that your email address was typed correctly.</li>
@@ -412,8 +437,8 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[75vh] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10B981]"></div>
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#0B0F19]">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent"></div>
         </div>
       }
     >

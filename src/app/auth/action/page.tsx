@@ -31,12 +31,6 @@ function AuthActionContent() {
 
   const [status, setStatus] = useState<ActionStatus>(() => {
     if (mode === 'resetPassword') return 'resetPassword';
-    if (!oobCode && mode !== 'verifyEmail') {
-      if (typeof window !== 'undefined' && auth.currentUser?.emailVerified) {
-        return 'success';
-      }
-      return 'missing_code';
-    }
     if (!oobCode) return 'missing_code';
     return 'verifying';
   });
@@ -467,6 +461,14 @@ function AuthActionContent() {
               <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
                 This verification code is no longer valid or has already been consumed. If your email is already verified, you can proceed directly to sign in.
               </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/80 text-left space-y-1.5 text-xs text-slate-300">
+              <p className="font-semibold text-amber-400">Why am I seeing this?</p>
+              <ul className="list-disc pl-4 space-y-1 text-slate-400">
+                <li><strong>Already Verified:</strong> If you already clicked this verification link earlier, your email has been confirmed. You can proceed to sign in.</li>
+                <li><strong>Multiple Requests:</strong> If you requested multiple verification emails, make sure you use the button in the most recent email.</li>
+              </ul>
             </div>
 
             <div className="space-y-3 pt-2">
