@@ -14,6 +14,7 @@ import {
   validateFullName, 
   validatePassword 
 } from '@/lib/utils/validation';
+import { recordSuccessfulResend } from '@/lib/utils/resendRateLimiter';
 
 export type AllowedRegistrationRole = 'customer' | 'retailer';
 
@@ -67,7 +68,7 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
       case 'auth/invalid-login-credentials':
         return 'Invalid email or password. Please try again.';
       case 'auth/too-many-requests':
-        return 'Too many attempts. Please wait a moment before trying again.';
+        return 'Too many attempts. Firebase has temporarily throttled email requests for this account. Please wait a moment before trying again.';
       case 'auth/user-disabled':
         return 'This account has been disabled. Please contact support.';
       case 'auth/network-request-failed':
@@ -140,6 +141,7 @@ export const registerUser = async (
     // 3. Send Firebase email verification with ActionCodeSettings immediately after successful registration
     try {
       await sendVerificationEmail(user);
+      recordSuccessfulResend(user.uid);
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('initial_verification_sent', 'true');
         sessionStorage.removeItem('initial_verification_error');

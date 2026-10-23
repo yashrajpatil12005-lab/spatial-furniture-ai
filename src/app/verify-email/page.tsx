@@ -6,8 +6,12 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { logoutUser, sendVerificationEmail, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/config';
-
-const RESEND_COOLDOWN_SECONDS = 60;
+import { 
+  checkResendRateLimit, 
+  recordSuccessfulResend, 
+  MAX_RESENDS_PER_HOUR,
+  type ResendRateStatus 
+} from '@/lib/utils/resendRateLimiter';
 
 function VerifyEmailContent() {
   const { user, userData, loading: authLoading, reloadUser } = useAuth();
@@ -28,7 +32,10 @@ function VerifyEmailContent() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [rateStatus, setRateStatus] = useState<ResendRateStatus>(() => {
+    const uid = auth.currentUser?.uid || user?.uid;
+    return checkResendRateLimit(uid || '');
+  });
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -58,22 +65,17 @@ function VerifyEmailContent() {
       : null
   );
 
-  // Countdown timer for resend button cooldown
+  // Countdown and sync timer for resend rate limiter
   useEffect(() => {
-    if (resendCooldown <= 0) return;
+    const uid = auth.currentUser?.uid || user?.uid;
+    if (!uid) return;
 
     const timer = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setRateStatus(checkResendRateLimit(uid));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [resendCooldown]);
+  }, [user]);
 
   const handleRedirectAfterVerification = useCallback(() => {
     const role = userData?.role;
@@ -142,7 +144,7 @@ function VerifyEmailContent() {
 
   // Resend verification email
   const handleResendEmail = async () => {
-    if (resendCooldown > 0 || isResending) return;
+    if (isResending) return;
 
     const currentUser = auth.currentUser || user;
 
@@ -165,17 +167,38 @@ function VerifyEmailContent() {
       return;
     }
 
+    // Check application rate limit before attempting network dispatch
+    const currentStatus = checkResendRateLimit(currentUser.uid);
+    if (!currentStatus.allowed) {
+      if (currentStatus.reason === 'hourly_limit') {
+        const minutes = Math.ceil(currentStatus.retryAfterSeconds / 60);
+        setStatusMessage({
+          type: 'error',
+          text: `You have reached the limit of ${MAX_RESENDS_PER_HOUR} verification emails per hour. Please wait ${minutes} minute(s) before trying again.`,
+        });
+      } else if (currentStatus.reason === 'cooldown') {
+        setStatusMessage({
+          type: 'info',
+          text: `Please wait ${currentStatus.cooldownSeconds} seconds before requesting another verification email.`,
+        });
+      }
+      return;
+    }
+
     setIsResending(true);
     setStatusMessage(null);
 
     try {
       await sendVerificationEmail(currentUser);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      // Strictly record success only after Firebase confirms sendEmailVerification succeeded
+      const updated = recordSuccessfulResend(currentUser.uid);
+      setRateStatus(updated);
       setStatusMessage({
         type: 'success',
         text: `Verification email sent! Please check ${displayEmail} (including Spam/Junk folder).`,
       });
     } catch (err: unknown) {
+      // Failed requests do NOT call recordSuccessfulResend()
       const message = getFriendlyAuthErrorMessage(err);
       setStatusMessage({
         type: 'error',
@@ -365,7 +388,7 @@ function VerifyEmailContent() {
                 id="resend-verification-btn"
                 type="button"
                 onClick={handleResendEmail}
-                disabled={isResending || resendCooldown > 0}
+                disabled={isResending || !rateStatus.allowed}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium text-amber-400 bg-slate-800/80 border border-amber-500/30 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isResending ? (
@@ -373,8 +396,10 @@ function VerifyEmailContent() {
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-amber-400 border-t-transparent"></div>
                     <span>Sending email...</span>
                   </>
-                ) : resendCooldown > 0 ? (
-                  <span>Resend email in {resendCooldown}s</span>
+                ) : rateStatus.cooldownSeconds > 0 ? (
+                  <span>Resend email in {rateStatus.cooldownSeconds}s</span>
+                ) : rateStatus.reason === 'hourly_limit' ? (
+                  <span>Hourly limit reached ({rateStatus.retryAfterSeconds > 60 ? `${Math.ceil(rateStatus.retryAfterSeconds / 60)}m` : `${rateStatus.retryAfterSeconds}s`})</span>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -384,6 +409,10 @@ function VerifyEmailContent() {
                   </>
                 )}
               </button>
+
+              <div id="resend-quota-indicator" className="text-center text-[11px] text-slate-400">
+                {rateStatus.remainingAttempts} of {MAX_RESENDS_PER_HOUR} resends remaining this hour
+              </div>
             </>
           ) : (
             <button

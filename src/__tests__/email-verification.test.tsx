@@ -13,6 +13,11 @@ import VerifyEmailPage from '@/app/verify-email/page';
 import LoginPage from '@/app/login/page';
 import Navbar from '@/components/layout/Navbar';
 import * as authModule from '@/lib/firebase/auth';
+import { 
+  resetResendRateLimit, 
+  recordSuccessfulResend,
+  MAX_RESENDS_PER_HOUR 
+} from '@/lib/utils/resendRateLimiter';
 
 // Mock next/navigation
 const mockRouterPush = vi.fn();
@@ -93,6 +98,8 @@ describe('Authentication & Email Verification Security Suite', () => {
       name: 'Test Customer',
     };
     mockReloadUser.mockImplementation(async () => mockUser);
+    resetResendRateLimit('user-pending-123');
+    resetResendRateLimit('user-already-verified');
   });
 
   describe('Password Requirements & Enforcement', () => {
@@ -258,8 +265,8 @@ describe('Authentication & Email Verification Security Suite', () => {
       expect(screen.getByRole('heading', { name: /verify your email address/i })).toBeInTheDocument();
       expect(screen.getByText('testuser@spatial.com')).toBeInTheDocument();
       expect(screen.getByText(/verification pending/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /i've verified my email/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /resend verification email/i })).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`${MAX_RESENDS_PER_HOUR} of ${MAX_RESENDS_PER_HOUR} resends remaining this hour`, 'i'))).toBeInTheDocument();
     });
 
     it('handles checking verification when user is still unverified', async () => {
@@ -364,6 +371,48 @@ describe('Authentication & Email Verification Security Suite', () => {
       await waitFor(() => {
         expect(screen.getByText(/too many attempts/i)).toBeInTheDocument();
       });
+    });
+
+    it('blocks resend and displays hourly limit state when 5 requests in an hour are exhausted', async () => {
+      // Simulate user already having 5 successful resends within the hour
+      const now = Date.now();
+      for (let i = 0; i < 5; i++) {
+        recordSuccessfulResend('user-pending-123', now - (300000 - i * 60000));
+      }
+
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail');
+
+      render(<VerifyEmailPage />);
+
+      // Button should indicate hourly limit and be disabled
+      const hourlyBtn = screen.getByRole('button', { name: /hourly limit reached/i });
+      expect(hourlyBtn).toBeDisabled();
+      expect(screen.getByText(/0 of 5 resends remaining this hour/i)).toBeInTheDocument();
+
+      // Clicking should not trigger send
+      fireEvent.click(hourlyBtn);
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not reduce remaining attempts quota when resend request fails', async () => {
+      vi.spyOn(authModule, 'sendVerificationEmail').mockRejectedValueOnce({
+        code: 'auth/network-request-failed',
+      });
+
+      render(<VerifyEmailPage />);
+
+      // Initially 5 attempts remaining
+      expect(screen.getByText(/5 of 5 resends remaining this hour/i)).toBeInTheDocument();
+
+      const resendBtn = screen.getByRole('button', { name: /resend verification email/i });
+      fireEvent.click(resendBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/network connection issue/i)).toBeInTheDocument();
+      });
+
+      // Still 5 attempts remaining because failed requests do not count
+      expect(screen.getByText(/5 of 5 resends remaining this hour/i)).toBeInTheDocument();
     });
 
     it('allows user to sign out from the verification screen', async () => {
