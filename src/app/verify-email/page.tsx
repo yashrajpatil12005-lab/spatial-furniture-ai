@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase/config';
 import { 
   checkResendRateLimit, 
   recordSuccessfulResend, 
+  recordThrottleCooldown,
   MAX_RESENDS_PER_HOUR,
   type ResendRateStatus 
 } from '@/lib/utils/resendRateLimiter';
@@ -32,9 +33,10 @@ function VerifyEmailContent() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const isResendingRef = useRef(false);
   const [rateStatus, setRateStatus] = useState<ResendRateStatus>(() => {
-    const uid = auth.currentUser?.uid || user?.uid;
-    return checkResendRateLimit(uid || '');
+    const uid = auth.currentUser?.uid || user?.uid || '';
+    return checkResendRateLimit(uid, Date.now(), queryEmail);
   });
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -46,10 +48,14 @@ function VerifyEmailContent() {
         sessionStorage.removeItem('initial_verification_error');
         return {
           type: 'error',
-          text: `We could not automatically dispatch the verification email (${initialError || 'network error'}). Please click "Resend Verification Email" below to receive your link.`,
+          text: initialError || 'We could not automatically dispatch the verification email. Please wait for the cooldown before trying again.',
         };
       } else if (initialSent === 'true') {
         sessionStorage.removeItem('initial_verification_sent');
+        return {
+          type: 'info',
+          text: `Verification email dispatched upon registration! Please check ${displayEmail} (including Spam/Junk folder).`,
+        };
       }
     } catch {
       // Ignore sessionStorage errors
@@ -67,15 +73,20 @@ function VerifyEmailContent() {
 
   // Countdown and sync timer for resend rate limiter
   useEffect(() => {
-    const uid = auth.currentUser?.uid || user?.uid;
-    if (!uid) return;
+    const uid = auth.currentUser?.uid || user?.uid || '';
 
-    const timer = setInterval(() => {
-      setRateStatus(checkResendRateLimit(uid));
-    }, 1000);
+    const syncStatus = () => {
+      setRateStatus(checkResendRateLimit(uid, Date.now(), queryEmail));
+    };
 
-    return () => clearInterval(timer);
-  }, [user]);
+    const timer = setInterval(syncStatus, 1000);
+    const initialSync = setTimeout(syncStatus, 0);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(initialSync);
+    };
+  }, [user, queryEmail]);
 
   const handleRedirectAfterVerification = useCallback(() => {
     const role = userData?.role;
@@ -144,7 +155,8 @@ function VerifyEmailContent() {
 
   // Resend verification email
   const handleResendEmail = async () => {
-    if (isResending) return;
+    // 1. Synchronously prevent concurrent clicks or duplicate handler triggers
+    if (isResendingRef.current || isResending) return;
 
     const currentUser = auth.currentUser || user;
 
@@ -167,8 +179,8 @@ function VerifyEmailContent() {
       return;
     }
 
-    // Check application rate limit before attempting network dispatch
-    const currentStatus = checkResendRateLimit(currentUser.uid);
+    // 2. Check application rate limit before attempting network dispatch
+    const currentStatus = checkResendRateLimit(currentUser.uid, Date.now(), currentUser.email || queryEmail);
     if (!currentStatus.allowed) {
       if (currentStatus.reason === 'hourly_limit') {
         const minutes = Math.ceil(currentStatus.retryAfterSeconds / 60);
@@ -185,20 +197,29 @@ function VerifyEmailContent() {
       return;
     }
 
+    isResendingRef.current = true;
     setIsResending(true);
     setStatusMessage(null);
 
     try {
       await sendVerificationEmail(currentUser);
       // Strictly record success only after Firebase confirms sendEmailVerification succeeded
-      const updated = recordSuccessfulResend(currentUser.uid);
+      const updated = recordSuccessfulResend(currentUser.uid, Date.now(), currentUser.email || undefined);
       setRateStatus(updated);
       setStatusMessage({
         type: 'success',
         text: `Verification email sent! Please check ${displayEmail} (including Spam/Junk folder).`,
       });
     } catch (err: unknown) {
-      // Failed requests do NOT call recordSuccessfulResend()
+      const errorCode = (err && typeof err === 'object' && 'code' in err) ? (err as { code: string }).code : '';
+      
+      // If Firebase returns auth/too-many-requests:
+      // Preserve local quota (do NOT record successful send), but enforce cooldown to prevent spamming Firebase
+      if (errorCode === 'auth/too-many-requests') {
+        const updated = recordThrottleCooldown(currentUser.uid, 60, currentUser.email || queryEmail);
+        setRateStatus(updated);
+      }
+
       const message = getFriendlyAuthErrorMessage(err);
       setStatusMessage({
         type: 'error',
@@ -206,6 +227,7 @@ function VerifyEmailContent() {
       });
     } finally {
       setIsResending(false);
+      isResendingRef.current = false;
     }
   };
 

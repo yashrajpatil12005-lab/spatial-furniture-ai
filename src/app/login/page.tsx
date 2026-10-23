@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { loginUser, sendVerificationEmail, logoutUser, getFriendlyAuthErrorMessage } from '@/lib/firebase/auth';
+import { checkResendRateLimit, recordSuccessfulResend, recordThrottleCooldown, MAX_RESENDS_PER_HOUR } from '@/lib/utils/resendRateLimiter';
 import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -18,6 +19,7 @@ function LoginContent() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendSuccess, setResendSuccess] = useState('');
   const [resending, setResending] = useState(false);
+  const resendingRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const isVerifiedQuery = searchParams.get('verified') === 'true';
@@ -85,18 +87,38 @@ function LoginContent() {
   };
 
   const handleResendFromLogin = async () => {
-    if (!unverifiedUser || resendCooldown > 0 || resending) return;
+    if (!unverifiedUser || resendingRef.current || resending || resendCooldown > 0) return;
+
+    const rateStatus = checkResendRateLimit(unverifiedUser.uid, Date.now(), unverifiedUser.email || undefined);
+    if (!rateStatus.allowed) {
+      if (rateStatus.reason === 'hourly_limit') {
+        const mins = Math.ceil(rateStatus.retryAfterSeconds / 60);
+        setError(`You have reached the limit of ${MAX_RESENDS_PER_HOUR} verification emails per hour. Please wait ${mins} minute(s) before trying again.`);
+      } else {
+        setError(`Please wait ${rateStatus.cooldownSeconds} seconds before requesting another verification email.`);
+      }
+      return;
+    }
+
+    resendingRef.current = true;
     setResending(true);
     setResendSuccess('');
     setError('');
     try {
       await sendVerificationEmail(unverifiedUser);
+      recordSuccessfulResend(unverifiedUser.uid, Date.now(), unverifiedUser.email || undefined);
       setResendCooldown(60);
       setResendSuccess(`Verification email sent to ${unverifiedUser.email}! Check your inbox.`);
-    } catch (err) {
+    } catch (err: unknown) {
+      const errorCode = (err && typeof err === 'object' && 'code' in err) ? (err as { code: string }).code : '';
+      if (errorCode === 'auth/too-many-requests') {
+        recordThrottleCooldown(unverifiedUser.uid, 60, unverifiedUser.email || undefined);
+        setResendCooldown(60);
+      }
       setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setResending(false);
+      resendingRef.current = false;
     }
   };
 

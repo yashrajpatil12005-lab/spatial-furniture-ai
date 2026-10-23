@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   checkResendRateLimit,
   recordSuccessfulResend,
+  recordThrottleCooldown,
   resetResendRateLimit,
   MAX_RESENDS_PER_HOUR,
   RESEND_COOLDOWN_SECONDS,
@@ -132,5 +133,48 @@ describe('Per-User Resend Rate Limiter Unit Tests', () => {
     expect(statusAfterFailure.allowed).toBe(true);
     expect(statusAfterFailure.remainingAttempts).toBe(5);
     expect(statusAfterFailure.cooldownSeconds).toBe(0);
+  });
+
+  it('preserves quota and activates 60s cooldown when Firebase throttles via recordThrottleCooldown', () => {
+    // Initial state: 5 of 5 remaining
+    expect(checkResendRateLimit(userA, baseTime).remainingAttempts).toBe(5);
+
+    // Firebase returns auth/too-many-requests -> recordThrottleCooldown is called
+    const throttleStatus = recordThrottleCooldown(userA, 60, undefined, baseTime);
+    expect(throttleStatus.allowed).toBe(false);
+    expect(throttleStatus.reason).toBe('cooldown');
+    expect(throttleStatus.cooldownSeconds).toBe(60);
+    // Quota is strictly preserved: still 5 attempts remaining
+    expect(throttleStatus.remainingAttempts).toBe(5);
+
+    // Check 30 seconds later
+    const midCooldown = checkResendRateLimit(userA, baseTime + 30000);
+    expect(midCooldown.allowed).toBe(false);
+    expect(midCooldown.reason).toBe('cooldown');
+    expect(midCooldown.cooldownSeconds).toBe(30);
+    expect(midCooldown.remainingAttempts).toBe(5);
+
+    // After 61 seconds: cooldown expired, user still has all 5 attempts
+    const afterCooldown = checkResendRateLimit(userA, baseTime + 61000);
+    expect(afterCooldown.allowed).toBe(true);
+    expect(afterCooldown.cooldownSeconds).toBe(0);
+    expect(afterCooldown.remainingAttempts).toBe(5);
+  });
+
+  it('shares rate limits and cooldown across primary UID and alternate email identifier', () => {
+    const userEmail = 'test.customer@spatial.ai';
+    resetResendRateLimit(userA, userEmail);
+
+    // Record send with primary UID and alternate email
+    recordSuccessfulResend(userA, baseTime, userEmail);
+
+    // Look up by empty UID but with alternate email: should find the record
+    const statusByEmail = checkResendRateLimit('', baseTime + 10000, userEmail);
+    expect(statusByEmail.allowed).toBe(false);
+    expect(statusByEmail.reason).toBe('cooldown');
+    expect(statusByEmail.cooldownSeconds).toBe(50);
+    expect(statusByEmail.remainingAttempts).toBe(4);
+
+    resetResendRateLimit(userA, userEmail);
   });
 });

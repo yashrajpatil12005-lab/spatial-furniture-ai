@@ -3,10 +3,10 @@
  *
  * Enforces:
  * - Up to 5 verification email resends per user per sliding 1-hour window.
- * - 60-second cooldown between successful sends.
- * - Per-authenticated-user tracking (keyed by UID).
+ * - 60-second cooldown between successful sends or Firebase throttle events.
+ * - Per-authenticated-user tracking (keyed by UID with optional email alias).
  * - Persistent storage (localStorage with memory fallback) across page reloads/restarts.
- * - Failed requests do NOT count towards rate limits.
+ * - Failed requests and Firebase throttle events do NOT count towards user's 5-resend quota.
  */
 
 export const MAX_RESENDS_PER_HOUR = 5;
@@ -76,29 +76,29 @@ export function saveUserResendRecord(userId: string, record: UserResendRecord): 
 /**
  * Evaluates whether a user is currently allowed to send/resend a verification email.
  * Cleans up timestamps older than 1 hour.
+ * Supports primary identifier (e.g., UID) and alternate identifier (e.g., email address).
  */
 export function checkResendRateLimit(
   userId: string,
-  currentTimeMs: number = Date.now()
+  currentTimeMs: number = Date.now(),
+  alternateIdentifier?: string
 ): ResendRateStatus {
-  if (!userId) {
-    return {
-      allowed: false,
-      reason: 'hourly_limit',
-      remainingAttempts: 0,
-      cooldownSeconds: 0,
-      retryAfterSeconds: 0,
-    };
-  }
+  let record = getUserResendRecord(userId);
 
-  const record = getUserResendRecord(userId);
+  // If primary identifier has no records, check alternate identifier (e.g. email)
+  if ((!record.lastSentTimestamp && record.timestamps.length === 0) && alternateIdentifier) {
+    const altRecord = getUserResendRecord(alternateIdentifier);
+    if (altRecord.lastSentTimestamp || altRecord.timestamps.length > 0) {
+      record = altRecord;
+    }
+  }
 
   // Filter timestamps within the sliding 1-hour window
   const validTimestamps = record.timestamps.filter(
     (ts) => currentTimeMs - ts < ONE_HOUR_MS && ts <= currentTimeMs
   );
 
-  // Check 60-second cooldown from last successful send
+  // Check 60-second cooldown from last send or throttle event
   if (record.lastSentTimestamp > 0) {
     const elapsedSeconds = Math.floor((currentTimeMs - record.lastSentTimestamp) / 1000);
     if (elapsedSeconds < RESEND_COOLDOWN_SECONDS && elapsedSeconds >= 0) {
@@ -143,9 +143,10 @@ export function checkResendRateLimit(
  */
 export function recordSuccessfulResend(
   userId: string,
-  timestampMs: number = Date.now()
+  timestampMs: number = Date.now(),
+  alternateIdentifier?: string
 ): ResendRateStatus {
-  if (!userId) {
+  if (!userId && !alternateIdentifier) {
     return {
       allowed: false,
       remainingAttempts: 0,
@@ -154,7 +155,8 @@ export function recordSuccessfulResend(
     };
   }
 
-  const record = getUserResendRecord(userId);
+  const primaryId = userId || alternateIdentifier || '';
+  const record = getUserResendRecord(primaryId);
 
   // Keep only timestamps within 1 hour, then append new timestamp
   const validTimestamps = record.timestamps.filter(
@@ -167,24 +169,77 @@ export function recordSuccessfulResend(
     lastSentTimestamp: timestampMs,
   };
 
-  saveUserResendRecord(userId, updatedRecord);
+  if (userId) saveUserResendRecord(userId, updatedRecord);
+  if (alternateIdentifier) saveUserResendRecord(alternateIdentifier, updatedRecord);
 
-  return checkResendRateLimit(userId, timestampMs);
+  return checkResendRateLimit(primaryId, timestampMs);
+}
+
+/**
+ * Records a cooldown due to a Firebase server-side throttle (auth/too-many-requests).
+ * PRESERVES the user's hourly quota (does NOT add to timestamps).
+ * Sets lastSentTimestamp so the frontend prevents rapid retries while throttled.
+ */
+export function recordThrottleCooldown(
+  userId: string,
+  cooldownSeconds: number = RESEND_COOLDOWN_SECONDS,
+  alternateIdentifier?: string,
+  timestampMs: number = Date.now()
+): ResendRateStatus {
+  const primaryId = userId || alternateIdentifier || '';
+  if (!primaryId) {
+    return {
+      allowed: false,
+      remainingAttempts: 0,
+      cooldownSeconds,
+      retryAfterSeconds: cooldownSeconds,
+    };
+  }
+
+  const record = getUserResendRecord(primaryId);
+
+  // Keep existing timestamps without adding a new one (quota is strictly preserved!)
+  const validTimestamps = record.timestamps.filter(
+    (ts) => timestampMs - ts < ONE_HOUR_MS && ts <= timestampMs
+  );
+
+  // Calculate synthetic lastSentTimestamp based on requested cooldownSeconds
+  const syntheticLastSent = timestampMs - (RESEND_COOLDOWN_SECONDS - cooldownSeconds) * 1000;
+
+  const updatedRecord: UserResendRecord = {
+    timestamps: validTimestamps,
+    lastSentTimestamp: Math.max(record.lastSentTimestamp, syntheticLastSent),
+  };
+
+  if (userId) saveUserResendRecord(userId, updatedRecord);
+  if (alternateIdentifier) saveUserResendRecord(alternateIdentifier, updatedRecord);
+
+  return checkResendRateLimit(primaryId, timestampMs);
 }
 
 /**
  * Clears the rate limit record for a user (useful for tests or administrative resets).
  */
-export function resetResendRateLimit(userId: string): void {
-  if (!userId) return;
+export function resetResendRateLimit(userId: string, alternateIdentifier?: string): void {
+  if (userId) {
+    inMemoryStore.delete(userId);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
+      } catch {
+        // Ignore
+      }
+    }
+  }
 
-  inMemoryStore.delete(userId);
-
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      window.localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
-    } catch {
-      // Ignore
+  if (alternateIdentifier) {
+    inMemoryStore.delete(alternateIdentifier);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.removeItem(`${STORAGE_KEY_PREFIX}${alternateIdentifier}`);
+      } catch {
+        // Ignore
+      }
     }
   }
 }

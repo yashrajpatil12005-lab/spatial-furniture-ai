@@ -98,7 +98,10 @@ describe('Authentication & Email Verification Security Suite', () => {
       name: 'Test Customer',
     };
     mockReloadUser.mockImplementation(async () => mockUser);
-    resetResendRateLimit('user-pending-123');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.clear();
+    }
+    resetResendRateLimit('user-pending-123', 'testuser@spatial.com');
     resetResendRateLimit('user-already-verified');
   });
 
@@ -413,6 +416,72 @@ describe('Authentication & Email Verification Security Suite', () => {
 
       // Still 5 attempts remaining because failed requests do not count
       expect(screen.getByText(/5 of 5 resends remaining this hour/i)).toBeInTheDocument();
+    });
+
+    it('preserves quota, activates cooldown, and accurately shows throttle error when Firebase returns auth/too-many-requests', async () => {
+      vi.spyOn(authModule, 'sendVerificationEmail').mockRejectedValueOnce({
+        code: 'auth/too-many-requests',
+      });
+
+      render(<VerifyEmailPage />);
+
+      // Initially 5 of 5
+      expect(screen.getByText(/5 of 5 resends remaining this hour/i)).toBeInTheDocument();
+
+      const resendBtn = screen.getByRole('button', { name: /resend verification email/i });
+      fireEvent.click(resendBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Too many attempts\. Firebase has temporarily throttled email requests for this account\. Please wait a moment before trying again\./i)
+        ).toBeInTheDocument();
+      });
+
+      // 1. Quota is strictly preserved: still 5 of 5 remaining
+      expect(screen.getByText(/5 of 5 resends remaining this hour/i)).toBeInTheDocument();
+
+      // 2. Cooldown is activated: button is disabled with countdown timer
+      const cooldownBtn = screen.getByRole('button', { name: /resend email in \d+s/i });
+      expect(cooldownBtn).toBeDisabled();
+    });
+
+    it('triggers sendVerificationEmail at most once when double-clicked rapidly', async () => {
+      let resolvePromise: (value?: unknown) => void;
+      const sendPromise = new Promise((resolve) => {
+        resolvePromise = resolve;
+      });
+
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail').mockReturnValueOnce(sendPromise as Promise<void>);
+
+      render(<VerifyEmailPage />);
+
+      const resendBtn = screen.getByRole('button', { name: /resend verification email/i });
+
+      // Click rapidly twice
+      fireEvent.click(resendBtn);
+      fireEvent.click(resendBtn);
+
+      // Resolve the network call
+      resolvePromise!();
+
+      await waitFor(() => {
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('immediately reflects registration cooldown on verify-email page mount', () => {
+      // Simulate registration having just sent verification email 5 seconds ago
+      const fiveSecondsAgo = Date.now() - 5000;
+      recordSuccessfulResend('user-pending-123', fiveSecondsAgo);
+
+      render(<VerifyEmailPage />);
+
+      // Button should be disabled with active cooldown countdown (~55s)
+      const cooldownBtn = screen.getByRole('button', { name: /resend email in \d+s/i });
+      expect(cooldownBtn).toBeDisabled();
+
+      // Reflects that 1 attempt was used during registration (4 remaining)
+      expect(screen.getByText(/4 of 5 resends remaining this hour/i)).toBeInTheDocument();
     });
 
     it('allows user to sign out from the verification screen', async () => {

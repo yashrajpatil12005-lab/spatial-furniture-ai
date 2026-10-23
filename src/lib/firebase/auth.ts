@@ -14,7 +14,7 @@ import {
   validateFullName, 
   validatePassword 
 } from '@/lib/utils/validation';
-import { recordSuccessfulResend } from '@/lib/utils/resendRateLimiter';
+import { recordSuccessfulResend, recordThrottleCooldown } from '@/lib/utils/resendRateLimiter';
 
 export type AllowedRegistrationRole = 'customer' | 'retailer';
 
@@ -141,13 +141,17 @@ export const registerUser = async (
     // 3. Send Firebase email verification with ActionCodeSettings immediately after successful registration
     try {
       await sendVerificationEmail(user);
-      recordSuccessfulResend(user.uid);
+      recordSuccessfulResend(user.uid, Date.now(), user.email || undefined);
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('initial_verification_sent', 'true');
         sessionStorage.removeItem('initial_verification_error');
       }
     } catch (emailErr: unknown) {
-      console.warn('[auth] Could not dispatch initial verification email automatically:', emailErr);
+      const errCode = (emailErr && typeof emailErr === 'object' && 'code' in emailErr) ? (emailErr as { code: string }).code : 'unknown';
+      console.warn(`[auth] Initial verification dispatch encountered error: operation=registerUser, code=${errCode}`);
+      if (errCode === 'auth/too-many-requests') {
+        recordThrottleCooldown(user.uid, 60, user.email || undefined);
+      }
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('initial_verification_sent', 'false');
         sessionStorage.setItem('initial_verification_error', getFriendlyAuthErrorMessage(emailErr));
@@ -164,7 +168,7 @@ export const registerUser = async (
 
 // 2. Send / resend email verification with ActionCodeSettings and graceful fallback
 export const sendVerificationEmail = async (
-  user?: User | null,
+  user?: User | null, 
   actionCodeSettings?: ActionCodeSettings
 ): Promise<void> => {
   // Resolve the authoritative Firebase User object
@@ -172,22 +176,34 @@ export const sendVerificationEmail = async (
   if (!targetUser) {
     const error = new Error('No authenticated user session found. Please sign in to verify your email.');
     (error as unknown as { code: string }).code = 'auth/no-current-user';
+    console.error('[auth] sendVerificationEmail aborted: no active user session.');
     throw error;
   }
 
   // If already verified, do not re-send
   if (targetUser.emailVerified) {
+    console.info('[auth] User is already verified. Skipping email verification dispatch.');
     return;
   }
 
   const settings = actionCodeSettings ?? getActionCodeSettings();
+  const uidPrefix = targetUser.uid.substring(0, 6);
+  console.info(`[auth] Initiating sendEmailVerification: uidPrefix=${uidPrefix}, hasCustomSettings=${Boolean(settings)}`);
+
   try {
     await sendEmailVerification(targetUser, settings);
+    console.info(`[auth] sendEmailVerification succeeded: uidPrefix=${uidPrefix}`);
   } catch (error: unknown) {
-    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : '';
-    
-    // Graceful fallback if continue URL domain is not yet authorized in Firebase Console,
-    // or if actionCodeSettings encounters continue URL or dynamic link configuration issues.
+    const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
+    console.error(`[auth] sendEmailVerification failed: operation=sendVerificationEmail, code=${errorCode}`);
+
+    // Stop automatic retries immediately if throttled, and record throttle cooldown locally
+    if (errorCode === 'auth/too-many-requests') {
+      recordThrottleCooldown(targetUser.uid, 60, targetUser.email || undefined);
+      throw error;
+    }
+
+    // Graceful fallback ONLY for continue URL domain configuration errors in Firebase Console
     const isSettingsRelatedError = 
       errorCode === 'auth/unauthorized-continue-uri' ||
       errorCode === 'auth/invalid-continue-uri' ||
@@ -196,13 +212,21 @@ export const sendVerificationEmail = async (
       errorCode === 'auth/dynamic-link-not-activated';
 
     if (isSettingsRelatedError) {
-      console.warn(`[auth] Continue URL / actionCodeSettings rejected with code ${errorCode}. Retrying default sendEmailVerification...`);
-      await sendEmailVerification(targetUser);
-      return;
+      console.warn(`[auth] ActionCodeSettings continue URL rejected with code ${errorCode}. Retrying default sendEmailVerification without continue URL...`);
+      try {
+        await sendEmailVerification(targetUser);
+        console.info(`[auth] Fallback sendEmailVerification succeeded: uidPrefix=${uidPrefix}`);
+        return;
+      } catch (fallbackError: unknown) {
+        const fallbackCode = (fallbackError && typeof fallbackError === 'object' && 'code' in fallbackError) ? (fallbackError as { code: string }).code : 'unknown';
+        console.error(`[auth] Fallback sendEmailVerification failed: operation=sendVerificationEmail(fallback), code=${fallbackCode}`);
+        if (fallbackCode === 'auth/too-many-requests') {
+          recordThrottleCooldown(targetUser.uid, 60, targetUser.email || undefined);
+        }
+        throw fallbackError;
+      }
     }
 
-    const errCode = errorCode || 'unknown';
-    console.error("Error sending verification email with code:", errCode);
     throw error;
   }
 };
