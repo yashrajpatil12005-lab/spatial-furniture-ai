@@ -125,6 +125,12 @@ sequenceDiagram
 - **Header Hardening**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`.
 - **Secret Protection**: `GEMINI_API_KEY` is strictly server-side (no `NEXT_PUBLIC_` prefix).
 
+### Secret Scanning Audit & Client-Key Security (Alert #1)
+- **Detected Value & Scope**: The detected value in GitHub Secret Scanning Alert #1 was identified as the Firebase Web API key for the Spatial Furniture AI project, intended for client-side Firebase configuration (`NEXT_PUBLIC_FIREBASE_API_KEY`).
+- **Source Code Remediation**: The hardcoded value has been removed from the current tracked source and replaced with environment-variable configuration in commit `2fbc3e2`.
+- **Application Restrictions**: Website restrictions (HTTP referrers) have been configured in Google Cloud Console to restrict client-side API requests to authorized project domains.
+- **Git History & Non-Revocation**: The historical commit remains unchanged to preserve repository lineage. The key was not classified as revoked because it remains active.
+
 ---
 
 ## 4. Multi-Tenant Firestore Security Architecture
