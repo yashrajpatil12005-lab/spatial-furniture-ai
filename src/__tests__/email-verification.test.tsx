@@ -594,4 +594,51 @@ describe('Authentication & Email Verification Security Suite', () => {
       expect(mockRouterPush).toHaveBeenCalledWith('/verify-email');
     });
   });
+
+  describe('Registration Single Dispatch & Verification Page Mount Isolation', () => {
+    it('does NOT automatically trigger sendVerificationEmail when /verify-email mounts', () => {
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail');
+      render(<VerifyEmailPage />);
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('displays success message strictly after sendVerificationEmail resolves, and never on error', async () => {
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail').mockRejectedValueOnce({
+        code: 'auth/too-many-requests',
+      });
+
+      render(<VerifyEmailPage />);
+      const resendBtn = screen.getByRole('button', { name: /resend verification email/i });
+      fireEvent.click(resendBtn);
+
+      await waitFor(() => {
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText(/Verification email sent!/i)).toBeNull();
+        expect(screen.getByText(/Too many attempts\. Firebase has temporarily throttled email requests/i)).toBeInTheDocument();
+      });
+    });
+
+    it('renders initial verification success notice from registration session state without sending duplicates', () => {
+      sessionStorage.clear();
+      sessionStorage.setItem('initial_verification_sent', 'true');
+
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail');
+      render(<VerifyEmailPage />);
+
+      expect(screen.getByText(/Verification email dispatched upon registration!/i)).toBeInTheDocument();
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('renders initial verification error notice from registration session state without retrying', () => {
+      sessionStorage.clear();
+      sessionStorage.setItem('initial_verification_sent', 'false');
+      sessionStorage.setItem('initial_verification_error', 'The domain is not authorized in Firebase Console settings.');
+
+      const sendSpy = vi.spyOn(authModule, 'sendVerificationEmail');
+      render(<VerifyEmailPage />);
+
+      expect(screen.getByText(/The domain is not authorized in Firebase Console settings\./i)).toBeInTheDocument();
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+  });
 });

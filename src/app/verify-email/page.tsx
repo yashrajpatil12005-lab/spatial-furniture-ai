@@ -235,8 +235,8 @@ function VerifyEmailContent() {
     try {
       await logoutUser();
       router.push('/login');
-    } catch (err) {
-      console.error('Sign out error:', err);
+    } catch {
+      console.error(`[verifyEmail] Sign out error: operation=logoutUser, timestamp=${new Date().toISOString()}`);
       router.push('/login');
     }
   };

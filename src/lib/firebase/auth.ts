@@ -80,7 +80,7 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
       case 'auth/invalid-action-code':
         return 'This verification link is invalid or has already been used. Please check if your email is already verified, or request a new verification link.';
       case 'auth/unauthorized-continue-uri':
-        return 'The verification continue URL domain is not authorized in Firebase Console settings.';
+        return 'The domain is not authorized in Firebase Console settings. Please add your domain (e.g. your Vercel deployment URL) under Authentication -> Settings -> Authorized domains in the Firebase Console.';
       case 'auth/invalid-continue-uri':
         return 'The verification continue URL provided is invalid.';
       case 'auth/quota-exceeded':
@@ -148,7 +148,7 @@ export const registerUser = async (
       }
     } catch (emailErr: unknown) {
       const errCode = (emailErr && typeof emailErr === 'object' && 'code' in emailErr) ? (emailErr as { code: string }).code : 'unknown';
-      console.warn(`[auth] Initial verification dispatch encountered error: operation=registerUser, code=${errCode}`);
+      console.warn(`[auth] Initial verification dispatch encountered error: operation=registerUser, timestamp=${new Date().toISOString()}, code=${errCode}`);
       if (errCode === 'auth/too-many-requests') {
         recordThrottleCooldown(user.uid, 60, user.email || undefined);
       }
@@ -161,7 +161,7 @@ export const registerUser = async (
     return userCredential;
   } catch (error: unknown) {
     const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
-    console.error("Error registering user with code:", errorCode);
+    console.error(`[auth] registerUser failed: operation=registerUser, timestamp=${new Date().toISOString()}, code=${errorCode}`);
     throw error;
   }
 };
@@ -176,57 +176,34 @@ export const sendVerificationEmail = async (
   if (!targetUser) {
     const error = new Error('No authenticated user session found. Please sign in to verify your email.');
     (error as unknown as { code: string }).code = 'auth/no-current-user';
-    console.error('[auth] sendVerificationEmail aborted: no active user session.');
+    console.error(`[auth] sendVerificationEmail aborted: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, reason=no-active-user-session`);
     throw error;
   }
 
   // If already verified, do not re-send
   if (targetUser.emailVerified) {
-    console.info('[auth] User is already verified. Skipping email verification dispatch.');
+    console.info(`[auth] User is already verified. Skipping email verification dispatch: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}`);
     return;
   }
 
   const settings = actionCodeSettings ?? getActionCodeSettings();
   const uidPrefix = targetUser.uid.substring(0, 6);
-  console.info(`[auth] Initiating sendEmailVerification: uidPrefix=${uidPrefix}, hasCustomSettings=${Boolean(settings)}`);
+  console.info(`[auth] Initiating sendEmailVerification: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, uidPrefix=${uidPrefix}, hasCustomSettings=${Boolean(settings)}`);
 
   try {
     await sendEmailVerification(targetUser, settings);
-    console.info(`[auth] sendEmailVerification succeeded: uidPrefix=${uidPrefix}`);
+    console.info(`[auth] sendEmailVerification succeeded: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, uidPrefix=${uidPrefix}`);
   } catch (error: unknown) {
     const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
-    console.error(`[auth] sendEmailVerification failed: operation=sendVerificationEmail, code=${errorCode}`);
+    console.error(`[auth] sendEmailVerification failed: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, code=${errorCode}`);
 
-    // Stop automatic retries immediately if throttled, and record throttle cooldown locally
+    // If throttled by Firebase, record throttle cooldown locally and do NOT retry
     if (errorCode === 'auth/too-many-requests') {
       recordThrottleCooldown(targetUser.uid, 60, targetUser.email || undefined);
-      throw error;
     }
 
-    // Graceful fallback ONLY for continue URL domain configuration errors in Firebase Console
-    const isSettingsRelatedError = 
-      errorCode === 'auth/unauthorized-continue-uri' ||
-      errorCode === 'auth/invalid-continue-uri' ||
-      errorCode === 'auth/missing-continue-uri' ||
-      errorCode === 'auth/argument-error' ||
-      errorCode === 'auth/dynamic-link-not-activated';
-
-    if (isSettingsRelatedError) {
-      console.warn(`[auth] ActionCodeSettings continue URL rejected with code ${errorCode}. Retrying default sendEmailVerification without continue URL...`);
-      try {
-        await sendEmailVerification(targetUser);
-        console.info(`[auth] Fallback sendEmailVerification succeeded: uidPrefix=${uidPrefix}`);
-        return;
-      } catch (fallbackError: unknown) {
-        const fallbackCode = (fallbackError && typeof fallbackError === 'object' && 'code' in fallbackError) ? (fallbackError as { code: string }).code : 'unknown';
-        console.error(`[auth] Fallback sendEmailVerification failed: operation=sendVerificationEmail(fallback), code=${fallbackCode}`);
-        if (fallbackCode === 'auth/too-many-requests') {
-          recordThrottleCooldown(targetUser.uid, 60, targetUser.email || undefined);
-        }
-        throw fallbackError;
-      }
-    }
-
+    // Do NOT perform automatic retries on failure (e.g. auth/unauthorized-continue-uri or auth/too-many-requests).
+    // Rapid back-to-back retries violate Firebase rate limits and trigger anti-abuse throttling (auth/too-many-requests).
     throw error;
   }
 };
@@ -237,7 +214,7 @@ export const applyVerificationCode = async (oobCode: string): Promise<void> => {
     await applyActionCode(auth, oobCode);
   } catch (error: unknown) {
     const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
-    console.error("Error applying verification action code:", errorCode);
+    console.error(`[auth] applyVerificationCode failed: operation=applyVerificationCode, timestamp=${new Date().toISOString()}, code=${errorCode}`);
     throw error;
   }
 };

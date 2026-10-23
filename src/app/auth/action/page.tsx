@@ -18,6 +18,7 @@ type ActionStatus =
   | 'user_not_found'
   | 'resetPassword'
   | 'missing_code'
+  | 'unsupported_mode'
   | 'error';
 
 function AuthActionContent() {
@@ -29,9 +30,14 @@ function AuthActionContent() {
   const oobCode = searchParams.get('oobCode') || '';
   const continueUrl = searchParams.get('continueUrl') || '';
 
+  const isEmailVerificationMode = mode === 'verifyEmail' || mode === 'verifyAndChangeEmail';
+  const isSamplePreviewCode = oobCode === 'sample_oob_verification_code_spatial_ai';
+
   const [status, setStatus] = useState<ActionStatus>(() => {
     if (mode === 'resetPassword') return 'resetPassword';
     if (!oobCode) return 'missing_code';
+    if (isSamplePreviewCode) return 'invalid';
+    if (!isEmailVerificationMode) return 'unsupported_mode';
     return 'verifying';
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -80,6 +86,7 @@ function AuthActionContent() {
   // Execute verification flow
   useEffect(() => {
     if (verificationExecutedRef.current || status !== 'verifying') return;
+    if (!isEmailVerificationMode || !oobCode || isSamplePreviewCode) return;
     verificationExecutedRef.current = true;
 
     async function handleVerify() {
@@ -110,17 +117,17 @@ function AuthActionContent() {
                 setUserRole(role);
               }
             }
-          } catch (sessionErr) {
-            console.warn('[authAction] Session refresh warning:', sessionErr);
+          } catch {
+            console.warn(`[authAction] Session refresh warning: operation=reloadUser, timestamp=${new Date().toISOString()}`);
           }
         }
 
         setStatus('success');
       } catch (err: unknown) {
-        console.error('[authAction] applyActionCode error:', err);
         const errorCode = (err && typeof err === 'object' && 'code' in err)
           ? (err as { code: string }).code
-          : '';
+          : 'unknown';
+        console.error(`[authAction] applyActionCode failed: operation=applyActionCode, timestamp=${new Date().toISOString()}, code=${errorCode}`);
 
         // If action code is invalid or already used, check if currentUser is already verified
         if (errorCode === 'auth/invalid-action-code') {
@@ -174,7 +181,7 @@ function AuthActionContent() {
     }
 
     handleVerify();
-  }, [oobCode, reloadUser, status]);
+  }, [oobCode, reloadUser, status, isEmailVerificationMode, isSamplePreviewCode]);
 
   // Listen for late auth state hydration in case user was signed in but auth hadn't loaded
   useEffect(() => {
@@ -596,7 +603,50 @@ function AuthActionContent() {
           </div>
         )}
 
-        {/* 8. GENERAL ERROR STATE */}
+        {/* 8. UNSUPPORTED MODE STATE (e.g. mode=action or invalid mode) */}
+        {status === 'unsupported_mode' && (
+          <div className="text-center space-y-5" data-testid="verification-unsupported-mode">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mb-1">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Unsupported Verification Mode
+              </span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                Unsupported Verification Mode
+              </h1>
+              <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
+                {mode === 'action'
+                  ? 'This link uses "mode=action", which is not a supported Firebase verification mode. Firebase email verification links generated with %LINK% use "mode=verifyEmail".'
+                  : `The verification action mode "${mode || 'unknown'}" is not supported. Please click the full dynamic link sent to your email address.`}
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Link
+                href="/verify-email"
+                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl font-semibold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 shadow-lg shadow-amber-500/25 transition-all text-sm"
+              >
+                <span>Go to Email Verification Page</span>
+              </Link>
+              <Link
+                href="/login"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700 transition-colors"
+              >
+                <span>Back to Sign In</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* 9. GENERAL ERROR STATE */}
         {status === 'error' && (
           <div className="text-center space-y-5" data-testid="verification-general-error">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 mb-1">

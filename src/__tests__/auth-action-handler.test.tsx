@@ -136,38 +136,40 @@ describe('Firebase Email Verification Return Flow & Action Handler Suite', () =>
       );
     });
 
-    it('falls back to sending without ActionCodeSettings if domain is unauthorized in Firebase Console', async () => {
+    it('does not perform automatic retries if ActionCodeSettings domain is unauthorized in Firebase Console', async () => {
       const mockUser = {
         uid: 'user-123',
         email: 'test@spatial.com',
-      } as unknown as firebaseAuth.User;
-
-      const spy = vi.spyOn(firebaseAuth, 'sendEmailVerification')
-        .mockRejectedValueOnce({ code: 'auth/unauthorized-continue-uri' })
-        .mockResolvedValueOnce(undefined);
-
-      await sendVerificationEmail(mockUser);
-
-      // Should have been called twice: first with settings, then fallback without settings
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy).toHaveBeenLastCalledWith(mockUser);
-    });
-
-    it('falls back to sending without ActionCodeSettings if settings fail with argument-error or invalid-continue-uri', async () => {
-      const mockUser = {
-        uid: 'user-456',
-        email: 'fallback@spatial.com',
         emailVerified: false,
       } as unknown as firebaseAuth.User;
 
       const spy = vi.spyOn(firebaseAuth, 'sendEmailVerification')
-        .mockRejectedValueOnce({ code: 'auth/argument-error' })
-        .mockResolvedValueOnce(undefined);
+        .mockRejectedValueOnce({ code: 'auth/unauthorized-continue-uri' });
 
-      await sendVerificationEmail(mockUser);
+      await expect(sendVerificationEmail(mockUser)).rejects.toMatchObject({
+        code: 'auth/unauthorized-continue-uri',
+      });
 
-      expect(spy).toHaveBeenCalledTimes(2);
-      expect(spy).toHaveBeenLastCalledWith(mockUser);
+      // Must be called exactly once: no automatic rapid retry that would cause throttling
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('records throttle cooldown locally and does not perform automatic retries if throttled with auth/too-many-requests', async () => {
+      const mockUser = {
+        uid: 'user-456',
+        email: 'throttle@spatial.com',
+        emailVerified: false,
+      } as unknown as firebaseAuth.User;
+
+      const spy = vi.spyOn(firebaseAuth, 'sendEmailVerification')
+        .mockRejectedValueOnce({ code: 'auth/too-many-requests' });
+
+      await expect(sendVerificationEmail(mockUser)).rejects.toMatchObject({
+        code: 'auth/too-many-requests',
+      });
+
+      // Exactly one attempt, no automatic retry
+      expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it('throws auth/no-current-user error when no authenticated user is available', async () => {
@@ -196,7 +198,7 @@ describe('Firebase Email Verification Return Flow & Action Handler Suite', () =>
       expect(getFriendlyAuthErrorMessage({ code: 'auth/invalid-action-code' }))
         .toBe('This verification link is invalid or has already been used. Please check if your email is already verified, or request a new verification link.');
       expect(getFriendlyAuthErrorMessage({ code: 'auth/unauthorized-continue-uri' }))
-        .toBe('The verification continue URL domain is not authorized in Firebase Console settings.');
+        .toContain('The domain is not authorized in Firebase Console settings.');
       expect(getFriendlyAuthErrorMessage({ code: 'auth/network-request-failed' }))
         .toBe('Network connection issue. Please check your internet connection.');
     });
@@ -362,6 +364,31 @@ describe('Firebase Email Verification Return Flow & Action Handler Suite', () =>
       render(<AuthActionPage />);
 
       expect(screen.getByRole('heading', { name: /password reset request/i })).toBeInTheDocument();
+    });
+
+    it('rejects unsupported mode=action with a clear message and does not call applyActionCode', () => {
+      mockSearchParams.set('mode', 'action');
+      mockSearchParams.set('oobCode', 'some-code-123');
+
+      const applySpy = vi.spyOn(firebaseAuth, 'applyActionCode');
+
+      render(<AuthActionPage />);
+
+      expect(screen.getByRole('heading', { name: /unsupported verification mode/i })).toBeInTheDocument();
+      expect(screen.getByText(/This link uses "mode=action", which is not a supported Firebase verification mode/i)).toBeInTheDocument();
+      expect(applySpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects sample preview placeholder code without calling applyActionCode', () => {
+      mockSearchParams.set('mode', 'verifyEmail');
+      mockSearchParams.set('oobCode', 'sample_oob_verification_code_spatial_ai');
+
+      const applySpy = vi.spyOn(firebaseAuth, 'applyActionCode');
+
+      render(<AuthActionPage />);
+
+      expect(screen.getByRole('heading', { name: /invalid or already used link/i })).toBeInTheDocument();
+      expect(applySpy).not.toHaveBeenCalled();
     });
   });
 
