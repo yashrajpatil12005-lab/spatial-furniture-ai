@@ -284,7 +284,7 @@ describe('Custom Email Verification System Suite', () => {
       expect(json.alreadyVerified).toBe(true);
     });
 
-    it('returns fallbackToClient: true when server SMTP dependencies are unconfigured', async () => {
+    it('returns 503 with configuration diagnostics when server SMTP dependencies are unconfigured', async () => {
       process.env.FIREBASE_PROJECT_ID = 'test-proj';
       process.env.FIREBASE_CLIENT_EMAIL = 'admin@test-proj.iam.gserviceaccount.com';
       process.env.FIREBASE_PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\nMOCK\n-----END PRIVATE KEY-----';
@@ -305,10 +305,10 @@ describe('Custom Email Verification System Suite', () => {
       const res = await POST(req);
       const json = await res.json();
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
       expect(json.success).toBe(false);
-      expect(json.fallbackToClient).toBe(true);
-      expect(json.error).toContain('not configured on the server');
+      expect(json.configStatus.mailerConfigured).toBe(false);
+      expect(json.error).toContain('not fully configured on the server');
     });
 
     it('extracts recipient strictly from verified token and ignores body email parameter (prevents unauthorized sending)', async () => {
@@ -538,6 +538,82 @@ describe('Custom Email Verification System Suite', () => {
         });
 
         // Crucial: Fallback to native sendEmailVerification must NOT have been executed!
+        expect(nativeSenderSpy).not.toHaveBeenCalled();
+      } finally {
+        global.fetch = originalFetch;
+        resetResendRateLimit(testUid, testEmail);
+      }
+    });
+
+    it('blocks fallback to native email sender and throws descriptive error when /api/auth/send-verification responds with 503 unconfigured', async () => {
+      const testUid = 'user-server-503-test';
+      const testEmail = 'server503@spatial.ai';
+      resetResendRateLimit(testUid, testEmail);
+
+      const mockUser = {
+        uid: testUid,
+        email: testEmail,
+        emailVerified: false,
+        getIdToken: vi.fn().mockResolvedValue('sample-token'),
+      } as unknown as firebaseAuth.User;
+
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'Email verification service is not fully configured on the server.',
+          configStatus: { adminReady: false, mailerConfigured: false },
+        }),
+      } as unknown as Response);
+
+      const nativeSenderSpy = vi.spyOn(firebaseAuth, 'sendEmailVerification');
+
+      try {
+        await expect(sendVerificationEmail(mockUser)).rejects.toMatchObject({
+          code: 'auth/email-service-unconfigured',
+        });
+
+        // Crucial: Fallback to native sendEmailVerification must NOT be executed!
+        expect(nativeSenderSpy).not.toHaveBeenCalled();
+      } finally {
+        global.fetch = originalFetch;
+        resetResendRateLimit(testUid, testEmail);
+      }
+    });
+
+    it('blocks fallback to native email sender and throws error when /api/auth/send-verification responds with 500 dispatch failure', async () => {
+      const testUid = 'user-server-500-test';
+      const testEmail = 'server500@spatial.ai';
+      resetResendRateLimit(testUid, testEmail);
+
+      const mockUser = {
+        uid: testUid,
+        email: testEmail,
+        emailVerified: false,
+        getIdToken: vi.fn().mockResolvedValue('sample-token'),
+      } as unknown as firebaseAuth.User;
+
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'Failed to dispatch verification email via SMTP.',
+        }),
+      } as unknown as Response);
+
+      const nativeSenderSpy = vi.spyOn(firebaseAuth, 'sendEmailVerification');
+
+      try {
+        await expect(sendVerificationEmail(mockUser)).rejects.toMatchObject({
+          code: 'auth/custom-email-failed',
+          message: 'Failed to dispatch verification email via SMTP.',
+        });
+
+        // Crucial: Fallback to native sendEmailVerification must NOT be executed!
         expect(nativeSenderSpy).not.toHaveBeenCalled();
       } finally {
         global.fetch = originalFetch;

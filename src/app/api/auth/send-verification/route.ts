@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, isFirebaseAdminReady } from '@/lib/firebase/admin';
-import { sendCustomVerificationEmail, isMailerConfigured } from '@/lib/email/mailer';
+import { getAdminAuth, isFirebaseAdminReady, getAdminConfigStatus } from '@/lib/firebase/admin';
+import { sendCustomVerificationEmail, getMailerConfigStatus } from '@/lib/email/mailer';
 import { verifyAuthToken } from '@/lib/firebase/serverAuth';
 import { 
   reserveResendSlot, 
@@ -168,23 +168,39 @@ export async function POST(req: NextRequest) {
     const reservationId = reservation.reservationId!;
 
     // 4. Verify server-side dependencies are ready
-    if (!isFirebaseAdminReady() || !isMailerConfigured()) {
-      return NextResponse.json({
-        success: false,
-        fallbackToClient: true,
-        reservationId,
-        error: 'Custom mailer or Firebase Admin SDK is not configured on the server.',
-      });
+    const adminStatus = getAdminConfigStatus();
+    const mailerStatus = getMailerConfigStatus();
+
+    if (!adminStatus.isReady || !mailerStatus.isConfigured) {
+      await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'unconfigured_server' });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Email verification service is not fully configured on the server. Please verify environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, SMTP_USER, SMTP_PASS) in Vercel.',
+          configStatus: {
+            adminReady: adminStatus.isReady,
+            hasProjectId: adminStatus.hasProjectId,
+            hasClientEmail: adminStatus.hasClientEmail,
+            hasPrivateKey: adminStatus.hasPrivateKey,
+            mailerConfigured: mailerStatus.isConfigured,
+            hasSmtpUser: mailerStatus.hasUser,
+            hasSmtpPass: mailerStatus.hasPass,
+          },
+        },
+        { status: 503 }
+      );
     }
 
     const adminAuth = getAdminAuth();
     if (!adminAuth) {
-      return NextResponse.json({
-        success: false,
-        fallbackToClient: true,
-        reservationId,
-        error: 'Firebase Admin Auth could not be initialized.',
-      });
+      await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'admin_init_failed' });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Firebase Admin Auth could not be initialized. Please verify the FIREBASE_PRIVATE_KEY format on the server.',
+        },
+        { status: 500 }
+      );
     }
 
     // 5. Generate genuine Firebase email verification link via Admin SDK
@@ -206,11 +222,13 @@ export async function POST(req: NextRequest) {
       // Release reserved slot since link generation failed before sending
       await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'link_generation_failed' });
 
-      return NextResponse.json({
-        success: false,
-        fallbackToClient: true,
-        error: 'Failed to generate verification link from Firebase Admin.',
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to generate email verification link from Firebase Admin (code: ${errCode}).`,
+        },
+        { status: 500 }
+      );
     }
 
     // 6. Send custom branded email with amber button via SMTP

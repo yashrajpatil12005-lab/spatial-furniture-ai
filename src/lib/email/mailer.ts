@@ -27,18 +27,61 @@ export interface MailerResult {
   isTimeout?: boolean;
 }
 
+/**
+ * Trims whitespace and removes wrapping double or single quotes.
+ */
+export function cleanEnvVar(val: string | undefined): string {
+  if (!val) return '';
+  let str = val.trim();
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  return str;
+}
+
+/**
+ * Normalizes Google App Passwords.
+ * Removes all internal spaces (e.g., "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
+ * and strips any wrapping quotes.
+ */
+export function cleanAppPassword(val: string | undefined): string {
+  if (!val) return '';
+  const str = cleanEnvVar(val);
+  return str.replace(/\s+/g, '');
+}
+
+export function getMailerConfigStatus(): {
+  isConfigured: boolean;
+  hasHost: boolean;
+  hasPort: boolean;
+  hasUser: boolean;
+  hasPass: boolean;
+} {
+  const user = cleanEnvVar(process.env.SMTP_USER || process.env.GMAIL_USER);
+  const pass = cleanAppPassword(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD);
+  const host = cleanEnvVar(process.env.SMTP_HOST) || 'smtp.gmail.com';
+  const port = cleanEnvVar(process.env.SMTP_PORT) || '465';
+
+  return {
+    isConfigured: Boolean(user && pass),
+    hasHost: Boolean(host),
+    hasPort: Boolean(port),
+    hasUser: Boolean(user),
+    hasPass: Boolean(pass),
+  };
+}
+
 export function isMailerConfigured(): boolean {
-  const user = process.env.SMTP_USER || process.env.GMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
-  return Boolean(user && pass);
+  return getMailerConfigStatus().isConfigured;
 }
 
 export function createMailTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '465', 10);
+  const host = cleanEnvVar(process.env.SMTP_HOST) || 'smtp.gmail.com';
+  const portStr = cleanEnvVar(process.env.SMTP_PORT) || '465';
+  const port = parseInt(portStr, 10) || 465;
   const secure = port === 465;
-  const user = process.env.SMTP_USER || process.env.GMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+  const user = cleanEnvVar(process.env.SMTP_USER || process.env.GMAIL_USER);
+  const pass = cleanAppPassword(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD);
 
   if (!user || !pass) {
     return null;
@@ -81,8 +124,8 @@ export async function sendCustomVerificationEmail(
     };
   }
 
-  const senderUser = process.env.SMTP_USER || process.env.GMAIL_USER;
-  const fromAddress = process.env.SMTP_FROM || `"Spatial Furniture AI" <${senderUser}>`;
+  const senderUser = cleanEnvVar(process.env.SMTP_USER || process.env.GMAIL_USER);
+  const fromAddress = cleanEnvVar(process.env.SMTP_FROM) || `"Spatial Furniture AI" <${senderUser}>`;
 
   const html = generateVerificationEmailHtml({
     actionLink,
