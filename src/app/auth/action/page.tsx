@@ -77,9 +77,22 @@ function AuthActionContent() {
   }, []);
 
   const handleRedirectToDashboard = useCallback(() => {
-    const target = continueUrl && continueUrl.startsWith('/') && !continueUrl.startsWith('/auth')
-      ? continueUrl
-      : getDashboardPath(userRole);
+    let target = getDashboardPath(userRole);
+    if (continueUrl) {
+      if (continueUrl.startsWith('/') && !continueUrl.startsWith('//') && !continueUrl.startsWith('/auth')) {
+        target = continueUrl;
+      } else {
+        try {
+          const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+          const parsed = new URL(continueUrl, currentOrigin || 'http://localhost:3000');
+          if (currentOrigin && parsed.origin === currentOrigin && !parsed.pathname.startsWith('/auth')) {
+            target = parsed.pathname + parsed.search;
+          }
+        } catch {
+          // Keep target as dashboard path if URL parsing fails
+        }
+      }
+    }
     router.push(target);
   }, [continueUrl, getDashboardPath, userRole, router]);
 

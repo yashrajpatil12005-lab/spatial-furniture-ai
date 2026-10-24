@@ -22,26 +22,51 @@ describe('Verification Email Template & Rendering Suite', () => {
       expect(html).toContain('Spatial Computing &amp; Retail AI');
     });
 
-    it('contains the exact required heading: "Verify your email address"', () => {
+    it('contains the exact title tag: "Verify Your Email Address | Spatial Furniture AI"', () => {
       const html = generateVerificationEmailHtml({
         actionLink: sampleLink,
         recipientEmail,
         recipientName,
       });
 
-      expect(html).toContain('Verify your email address');
-      // Should be in an h1 tag
-      expect(html).toMatch(/<h1[^>]*>[\s\S]*?Verify your email address[\s\S]*?<\/h1>/i);
+      expect(html).toContain('<title>Verify Your Email Address | Spatial Furniture AI</title>');
     });
 
-    it('contains the exact required message: "Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started."', () => {
+    it('renders with dark navy background (#0B0F19) and white content card (#FFFFFF)', () => {
       const html = generateVerificationEmailHtml({
         actionLink: sampleLink,
         recipientEmail,
         recipientName,
       });
 
-      expect(html).toContain('Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.');
+      // Dark navy canvas
+      expect(html).toContain('background-color: #0B0F19');
+      // White content card
+      expect(html).toContain('background-color: #FFFFFF');
+      // Top amber accent bar
+      expect(html).toContain('linear-gradient(90deg, #F59E0B');
+    });
+
+    it('contains the exact required heading: "Verify Your Email Address" in an h1 tag', () => {
+      const html = generateVerificationEmailHtml({
+        actionLink: sampleLink,
+        recipientEmail,
+        recipientName,
+      });
+
+      expect(html).toMatch(/<h1[^>]*>[\s\S]*?Verify Your Email Address[\s\S]*?<\/h1>/i);
+    });
+
+    it('contains the exact required welcome message and body paragraphs', () => {
+      const html = generateVerificationEmailHtml({
+        actionLink: sampleLink,
+        recipientEmail,
+        recipientName,
+      });
+
+      expect(html).toContain('Welcome to Spatial Furniture AI!');
+      expect(html).toContain("Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.");
+      expect(html).toContain('To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below.');
     });
 
     it('renders one prominent amber button labeled "Verify Email Address" with the actual action link', () => {
@@ -51,21 +76,33 @@ describe('Verification Email Template & Rendering Suite', () => {
         recipientName,
       });
 
-      // Contains prominent button text
+      // Button label
       expect(html).toContain('Verify Email Address');
 
-      // Uses amber color #F59E0B
+      // Amber brand color
       expect(html).toContain('#F59E0B');
 
-      // Button links to the actual Firebase verification action link (with HTML-safe ampersands)
+      // Real HTML anchor linking to the action link
       expect(html).toContain('href="https://spatial-furniture-ai.vercel.app/auth/action?mode=verifyEmail&amp;oobCode=secure-token-12345"');
 
-      // Includes bulletproof Outlook VML roundrect markup
+      // Outlook VML roundrect markup for bulletproof email rendering
       expect(html).toContain('v:roundrect');
       expect(html).toContain('fillcolor="#F59E0B"');
     });
 
-    it('contains the exact required footer text: "If you didn\'t create this account, you can safely ignore this email."', () => {
+    it('does NOT expose the raw verification URL as visible text', () => {
+      const html = generateVerificationEmailHtml({
+        actionLink: sampleLink,
+        recipientEmail,
+        recipientName,
+      });
+
+      // The raw link must only exist within attribute values (href=...), never as plain text inside tags
+      const withoutHrefs = html.replace(/href="[^"]*"/g, '').replace(/href='[^']*'/g, '');
+      expect(withoutHrefs).not.toContain('https://spatial-furniture-ai.vercel.app/auth/action?mode=verifyEmail');
+    });
+
+    it('contains the exact required closing and footer text', () => {
       const html = generateVerificationEmailHtml({
         actionLink: sampleLink,
         recipientEmail,
@@ -73,21 +110,9 @@ describe('Verification Email Template & Rendering Suite', () => {
       });
 
       expect(html).toContain("If you didn't create this account, you can safely ignore this email.");
-    });
-
-    it('renders a visually secondary fallback link without making the raw URL the dominant visual content', () => {
-      const html = generateVerificationEmailHtml({
-        actionLink: sampleLink,
-        recipientEmail,
-        recipientName,
-      });
-
-      // Secondary guidance text
-      expect(html).toContain('Button not working? Use this link instead:');
-      expect(html).toContain('auth/action?mode=verifyEmail&amp;oobCode=secure-token-12345');
-
-      // Kept visually secondary with small font styling
-      expect(html).toContain('font-size: 11px');
+      expect(html).toContain('Thank you for joining us!');
+      expect(html).toContain('Warm regards,');
+      expect(html).toContain('The Spatial Furniture AI Team');
     });
 
     it('sanitizes user input to prevent XSS injection in HTML emails', () => {
@@ -116,7 +141,7 @@ describe('Verification Email Template & Rendering Suite', () => {
   });
 
   describe('Plain Text Email Template Generation', () => {
-    it('generates compliant plain-text format with required sections', () => {
+    it('generates compliant plain-text format with required sections and copy', () => {
       const text = generateVerificationEmailText({
         actionLink: sampleLink,
         recipientEmail,
@@ -124,23 +149,33 @@ describe('Verification Email Template & Rendering Suite', () => {
       });
 
       expect(text).toContain('SPATIAL FURNITURE AI');
-      expect(text).toContain('Verify your email address');
-      expect(text).toContain('Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.');
+      expect(text).toContain('Verify Your Email Address | Spatial Furniture AI');
+      expect(text).toContain('Welcome to Spatial Furniture AI!');
+      expect(text).toContain("Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.");
+      expect(text).toContain('To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below:');
       expect(text).toContain('Verify Email Address:');
       expect(text).toContain(sampleLink);
       expect(text).toContain("If you didn't create this account, you can safely ignore this email.");
+      expect(text).toContain('Thank you for joining us!');
+      expect(text).toContain('Warm regards,');
+      expect(text).toContain('The Spatial Furniture AI Team');
     });
   });
 
   describe('Firebase Console Setup Configuration', () => {
-    it('provides correct template settings for Firebase Console setup', () => {
+    it('provides correct template settings for Firebase Console setup with %LINK%', () => {
       const config = getFirebaseConsoleTemplateConfig();
 
       expect(config.senderName).toBe('Spatial Furniture AI');
-      expect(config.subject).toContain('Verify your email address');
-      expect(config.recommendedConsoleBody).toContain('Welcome to Spatial Furniture AI!');
-      expect(config.recommendedConsoleBody).toContain('%LINK%');
+      expect(config.subject).toBe('Verify Your Email Address | Spatial Furniture AI');
       expect(config.actionUrlPath).toBe('/auth/action');
+      expect(config.recommendedConsoleHtmlBody).toContain('Welcome to Spatial Furniture AI!');
+      expect(config.recommendedConsoleHtmlBody).toContain('%LINK%');
+      expect(config.recommendedConsoleHtmlBody).toContain('#0B0F19');
+      expect(config.recommendedConsoleHtmlBody).toContain('#ffffff');
+      expect(config.recommendedConsolePlainTextBody).toContain('Welcome to Spatial Furniture AI!');
+      expect(config.recommendedConsolePlainTextBody).toContain('%LINK%');
+      expect(config.recommendedConsolePlainTextBody).toContain('The Spatial Furniture AI Team');
     });
   });
 });

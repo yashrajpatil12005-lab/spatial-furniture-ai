@@ -5,13 +5,15 @@
  * compatible with Gmail (Desktop, iOS, Android), Apple Mail, Outlook (Windows/Mac/Web),
  * Yahoo, and modern mobile clients.
  * 
- * Features:
- * - Prominent amber button labeled "Verify Email Address"
- * - Spatial Furniture AI luxury dark-theme branding
- * - Bulletproof Outlook VML roundrect markup
- * - Visually secondary fallback link (avoids dominant raw URL)
- * - Required security footer text
- * - Clean mobile responsiveness
+ * Design specifications:
+ * - Brand: Spatial Furniture AI
+ * - Style: Premium, modern, clean, professional
+ * - Colors: Dark navy background (#0B0F19), white content card (#FFFFFF), amber/gold CTA button (#F59E0B)
+ * - Tone: Friendly, trustworthy, concise
+ * - Subject: Verify Your Email Address | Spatial Furniture AI
+ * - Button: Real HTML anchor styled as button, href set to %LINK% (or generated action link)
+ * - Button Label: "Verify Email Address"
+ * - Security: Raw verification URL is NEVER exposed as visible text
  */
 
 export interface VerificationEmailOptions {
@@ -36,6 +38,8 @@ function escapeHtml(str: string): string {
 
 /**
  * Generates a production-ready, bulletproof HTML verification email.
+ * Styled with a dark navy background (#0B0F19), a clean white content card (#FFFFFF),
+ * and an amber/gold CTA button (#F59E0B) labeled "Verify Email Address".
  */
 export function generateVerificationEmailHtml(options: VerificationEmailOptions): string {
   const {
@@ -58,9 +62,8 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
-  <meta name="color-scheme" content="dark light">
-  <meta name="supported-color-schemes" content="dark light">
-  <title>Verify your email address — ${escapeHtml(appName)}</title>
+  <meta name="color-scheme" content="light">
+  <title>Verify Your Email Address | ${escapeHtml(appName)}</title>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -79,7 +82,7 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
       width: 100% !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: #0B0F19;
-      color: #E2E8F0;
+      color: #1E293B;
       -webkit-font-smoothing: antialiased;
       -ms-text-size-adjust: 100%;
       -webkit-text-size-adjust: 100%;
@@ -102,7 +105,6 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
     }
     a {
       text-decoration: none;
-      color: #F59E0B;
     }
     /* Mobile responsive adjustments */
     @media screen and (max-width: 600px) {
@@ -112,12 +114,13 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
         padding: 16px 12px !important;
       }
       .card-body {
-        padding: 28px 20px !important;
+        padding: 32px 20px !important;
       }
       .mobile-button {
         width: 100% !important;
         max-width: 100% !important;
         display: block !important;
+        padding: 0 16px !important;
       }
       .heading-title {
         font-size: 22px !important;
@@ -129,14 +132,14 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
 <body style="margin: 0; padding: 0; background-color: #0B0F19; word-spacing: normal;">
   <!-- Hidden Preheader text for inbox preview -->
   <div style="display: none; font-size: 1px; color: #0B0F19; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all;">
-    Verify your email address to access your Spatial Furniture AI workspace and begin room visualization.
+    Verify your email address to unlock your personalized Spatial Furniture AI workspace.
     &#847; &zwnj; &nbsp; &#8199; &shy; &#847; &zwnj; &nbsp; &#8199; &shy;
   </div>
 
-  <!-- Email Wrapper Canvas -->
+  <!-- Email Wrapper Canvas: Dark Navy (#0B0F19) -->
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0B0F19; table-layout: fixed;">
     <tr>
-      <td align="center" style="padding: 32px 16px;">
+      <td align="center" style="padding: 36px 16px;">
         
         <!-- Main Card Container (Max width: 580px) -->
         <table role="presentation" class="email-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin: 0 auto;">
@@ -148,13 +151,13 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
                 <tr>
                   <!-- Monogram Logo Badge -->
                   <td valign="middle" style="padding-right: 12px;">
-                    <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); text-align: center; line-height: 40px; font-weight: 800; font-size: 20px; color: #0B0F19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
+                    <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); text-align: center; line-height: 42px; font-weight: 800; font-size: 22px; color: #0B0F19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
                       S
                     </div>
                   </td>
                   <!-- Brand Name & Product Identifier -->
                   <td valign="middle" style="text-align: left;">
-                    <span style="font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                       ${escapeHtml(appName)}
                     </span>
                     <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #F59E0B; display: block;">
@@ -166,14 +169,14 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
             </td>
           </tr>
 
-          <!-- MAIN CARD CONTENT -->
+          <!-- WHITE CONTENT CARD (Dark navy background, white content card) -->
           <tr>
-            <td style="background-color: #111827; border: 1px solid #1F2937; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);">
+            <td style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);">
               
-              <!-- Top Amber Hairline Accent -->
+              <!-- Top Amber Hairline Accent Bar -->
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td height="3" style="background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 50%, #D97706 100%); font-size: 1px; line-height: 1px;">&nbsp;</td>
+                  <td height="4" style="background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 50%, #D97706 100%); font-size: 1px; line-height: 1px;">&nbsp;</td>
                 </tr>
               </table>
 
@@ -182,39 +185,48 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
                 <tr>
                   <td class="card-body" style="padding: 40px 36px 36px 36px;">
                     
-                    <!-- Decorative Verification Icon Badge -->
+                    <!-- Security / Action Required Pill Badge -->
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
                       <tr>
-                        <td style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 10px 14px; text-align: center;">
-                          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #FBBF24; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                            &#9881; Action Required &bull; Account Security
+                        <td style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 6px 12px; text-align: center;">
+                          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #B45309; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            &#9881; Action Required &bull; Account Verification
                           </span>
                         </td>
                       </tr>
                     </table>
 
                     <!-- REQUIRED HEADING -->
-                    <h1 class="heading-title" style="margin: 0 0 16px 0; font-size: 26px; font-weight: 800; line-height: 32px; color: #FFFFFF; letter-spacing: -0.02em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                      Verify your email address
+                    <h1 class="heading-title" style="margin: 0 0 20px 0; font-size: 26px; font-weight: 800; line-height: 32px; color: #0F172A; letter-spacing: -0.02em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      Verify Your Email Address
                     </h1>
 
-                    <!-- GREETING & REQUIRED MESSAGE -->
-                    <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 24px; color: #CBD5E1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <!-- GREETING & REQUIRED CONTENT -->
+                    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #0F172A; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                       ${greeting}
                     </p>
-                    <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 24px; color: #94A3B8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                      Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.
+                    
+                    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1E293B; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      Welcome to Spatial Furniture AI!
+                    </p>
+
+                    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.
+                    </p>
+
+                    <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 24px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below.
                     </p>
 
                     ${safeEmail ? `
                     <!-- Registered Email Callout -->
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px;">
                       <tr>
-                        <td style="background-color: #0F172A; border: 1px solid #1E293B; border-radius: 12px; padding: 12px 16px;">
+                        <td style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px;">
                           <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748B; display: block; margin-bottom: 2px;">
-                            Account email
+                            Account Email
                           </span>
-                          <span style="font-size: 14px; font-weight: 600; color: #F1F5F9; font-family: monospace;">
+                          <span style="font-size: 14px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                             ${safeEmail}
                           </span>
                         </td>
@@ -222,21 +234,22 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
                     </table>
                     ` : ''}
 
-                    <!-- PROMINENT AMBER VERIFICATION BUTTON (Requirement 1 & 2) -->
-                    <!-- Includes Microsoft Outlook VML Fallback & Clean CSS for Gmail/Apple/Yahoo -->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                    <!-- PROMINENT AMBER CTA BUTTON -->
+                    <!-- Real HTML anchor styled as a button with %LINK% / safeLink href; raw URL is never exposed as visible text -->
+                    <!-- This button must use Firebase's actual generated verification URL. Clicking it must verify the recipient's email address and then direct them to the correct page on my deployed Vercel website. -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0 24px 0;">
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${safeLink}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="24%" stroke="f" fillcolor="#F59E0B">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${safeLink}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="20%" stroke="f" fillcolor="#F59E0B">
                             <w:anchorlock/>
-                            <center style="color:#0B0F19;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:bold;">
+                            <center style="color:#0B0F19;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:800;">
                               Verify Email Address
                             </center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="${safeLink}" target="_blank" class="mobile-button" style="display: inline-block; background-color: #F59E0B; background-image: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #0B0F19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 800; line-height: 52px; text-align: center; text-decoration: none; padding: 0 32px; border-radius: 14px; box-shadow: 0 4px 18px rgba(245, 158, 11, 0.4); mso-hide: all; -webkit-text-size-adjust: none;">
+                          <a href="${safeLink}" target="_blank" class="mobile-button" style="display: inline-block; background-color: #F59E0B; background-image: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #0B0F19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; font-weight: 800; line-height: 52px; text-align: center; text-decoration: none; padding: 0 36px; border-radius: 12px; box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35); mso-hide: all; -webkit-text-size-adjust: none;">
                             Verify Email Address
                           </a>
                           <!--<![endif]-->
@@ -244,23 +257,25 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
                       </tr>
                     </table>
 
-                    <!-- Security Note -->
+                    <!-- Security Expiry Note -->
                     <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 20px; color: #64748B; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                      This verification link will expire in ${expiresInHours} hours. Once verified, you will have immediate access to your spatial workspace.
+                      This verification link will expire in ${expiresInHours} hours. Once verified, you will be directed securely to your Spatial Furniture AI experience.
                     </p>
 
-                    <!-- VISUALLY SECONDARY FALLBACK LINK (Requirement 1) -->
-                    <!-- Avoids dominant, raw ugly URLs in the main body -->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #1F2937; margin-top: 24px; padding-top: 20px;">
+                    <!-- Divider & Closing Section -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #E2E8F0; margin-top: 24px; padding-top: 24px;">
                       <tr>
                         <td>
-                          <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 500; color: #64748B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                            Button not working? Use this link instead:
+                          <!-- Ignore Notice -->
+                          <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 20px; color: #64748B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            If you didn't create this account, you can safely ignore this email.
                           </p>
-                          <p style="margin: 0; font-size: 11px; line-height: 16px; word-break: break-all; color: #94A3B8; font-family: monospace;">
-                            <a href="${safeLink}" target="_blank" style="color: #F59E0B; text-decoration: underline;">
-                              ${safeLink}
-                            </a>
+                          <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 22px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            Thank you for joining us!
+                          </p>
+                          <p style="margin: 0; font-size: 14px; line-height: 22px; color: #0F172A; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            Warm regards,<br>
+                            <span style="color: #D97706;">The Spatial Furniture AI Team</span>
                           </p>
                         </td>
                       </tr>
@@ -273,14 +288,13 @@ export function generateVerificationEmailHtml(options: VerificationEmailOptions)
             </td>
           </tr>
 
-          <!-- EMAIL FOOTER (Requirement 1: Small footer text) -->
+          <!-- EMAIL FOOTER (Outside White Card on Dark Navy Background) -->
           <tr>
             <td style="padding: 24px 16px 0 16px; text-align: center;">
-              <!-- REQUIRED FOOTER TEXT -->
-              <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 18px; color: #64748B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                If you didn't create this account, you can safely ignore this email.
+              <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 18px; color: #94A3B8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                Spatial Furniture AI &bull; Luxury Spatial Computing &amp; Room Visualization
               </p>
-              <p style="margin: 0; font-size: 11px; line-height: 16px; color: #475569; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <p style="margin: 0; font-size: 11px; line-height: 16px; color: #64748B; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                 &copy; ${new Date().getFullYear()} ${escapeHtml(appName)}. All rights reserved.
               </p>
             </td>
@@ -312,13 +326,15 @@ export function generateVerificationEmailText(options: VerificationEmailOptions)
 ${appName.toUpperCase()}
 ========================================
 
-Verify your email address
+Verify Your Email Address | ${appName}
 
 ${greeting}
 
-Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.
+Welcome to Spatial Furniture AI!
 
-To verify your account, please visit the verification link below:
+Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.
+
+To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below:
 
 Verify Email Address:
 ${actionLink}
@@ -327,6 +343,11 @@ ${actionLink}
 
 ----------------------------------------
 If you didn't create this account, you can safely ignore this email.
+
+Thank you for joining us!
+
+Warm regards,
+The Spatial Furniture AI Team
 
 © ${new Date().getFullYear()} ${appName}. All rights reserved.
 `;
@@ -339,20 +360,40 @@ If you didn't create this account, you can safely ignore this email.
 export function getFirebaseConsoleTemplateConfig() {
   return {
     senderName: 'Spatial Furniture AI',
-    subject: 'Verify your email address for Spatial Furniture AI',
-    // Message body for Firebase Console default template editor
-    // Note: Firebase Console's standard template uses %DISPLAY_NAME%, %APP_NAME%, and %LINK%
-    recommendedConsoleBody: `Hello %DISPLAY_NAME%,
+    subject: 'Verify Your Email Address | Spatial Furniture AI',
+    actionUrlPath: '/auth/action',
+    // Recommended HTML template for Firebase Console template editor (inline styles, dark navy background, white card, amber CTA button)
+    recommendedConsoleHtmlBody: `<div style="background-color:#0B0F19;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;text-align:center;">
+  <div style="max-width:540px;margin:0 auto;background-color:#ffffff;border-radius:16px;padding:36px 32px;text-align:left;box-shadow:0 10px 25px rgba(0,0,0,0.25);">
+    <h1 style="color:#0F172A;font-size:22px;font-weight:800;margin:0 0 16px 0;">Spatial Furniture AI</h1>
+    <p style="color:#0F172A;font-size:15px;line-height:24px;font-weight:600;margin:0 0 12px 0;">Hello,</p>
+    <p style="color:#1E293B;font-size:15px;line-height:24px;font-weight:700;margin:0 0 12px 0;">Welcome to Spatial Furniture AI!</p>
+    <p style="color:#334155;font-size:14px;line-height:22px;margin:0 0 14px 0;">Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.</p>
+    <p style="color:#334155;font-size:14px;line-height:22px;margin:0 0 24px 0;">To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below.</p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="%LINK%" style="display:inline-block;background-color:#F59E0B;background-image:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);color:#0B0F19;font-weight:800;font-size:15px;text-decoration:none;padding:14px 34px;border-radius:10px;box-shadow:0 4px 14px rgba(245,158,11,0.35);">Verify Email Address</a>
+    </div>
+    <p style="color:#64748B;font-size:12px;line-height:18px;margin:24px 0 12px 0;text-align:center;">If you didn't create this account, you can safely ignore this email.</p>
+    <p style="color:#334155;font-size:14px;line-height:22px;margin:0 0 4px 0;text-align:center;">Thank you for joining us!</p>
+    <p style="color:#0F172A;font-size:14px;line-height:22px;font-weight:700;margin:0;text-align:center;">Warm regards,<br><span style="color:#D97706;">The Spatial Furniture AI Team</span></p>
+  </div>
+</div>`,
+    // Recommended plain text body for standard template editor if inline HTML is not supported
+    recommendedConsolePlainTextBody: `Hello,
 
-Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.
+Welcome to Spatial Furniture AI!
 
-Click the link below to verify your email address:
+Thank you for creating your account. We're excited to help you discover furniture and visualize how it can fit into your space.
+
+To secure your account and unlock your personalized furniture experience, please verify your email address by clicking the button below:
+
 %LINK%
 
 If you didn't create this account, you can safely ignore this email.
 
-Thanks,
+Thank you for joining us!
+
+Warm regards,
 The Spatial Furniture AI Team`,
-    actionUrlPath: '/auth/action',
   };
 }

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     const consoleConfig = getFirebaseConsoleTemplateConfig();
 
     return NextResponse.json({
-      subject: 'Verify your email address',
+      subject: 'Verify Your Email Address | Spatial Furniture AI',
       recipientEmail: email,
       recipientName: name,
       actionLink: sampleLink,

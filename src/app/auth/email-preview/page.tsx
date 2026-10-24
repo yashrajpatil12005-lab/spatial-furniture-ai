@@ -2,35 +2,22 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { getFirebaseConsoleTemplateConfig } from '@/lib/email/verificationEmail';
 
 export default function EmailPreviewPage() {
   const [recipientName, setRecipientName] = useState('Alex Chen');
   const [recipientEmail, setRecipientEmail] = useState('alex.chen@example.com');
-  const [activeTab, setActiveTab] = useState<'preview' | 'html' | 'console'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'console'>('preview');
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [copied, setCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState<'html' | 'text' | null>(null);
 
   const previewUrl = `/api/auth/email-template?format=html&name=${encodeURIComponent(recipientName)}&email=${encodeURIComponent(recipientEmail)}`;
+  const consoleConfig = getFirebaseConsoleTemplateConfig();
 
-  const firebaseConsoleTemplate = `Subject: Verify your email address for Spatial Furniture AI
-
-Message Body:
-Hello %DISPLAY_NAME%,
-
-Welcome to Spatial Furniture AI! Please verify your email address to secure your account and get started.
-
-Click the link below to verify your email address:
-%LINK%
-
-If you didn't create this account, you can safely ignore this email.
-
-Thanks,
-The Spatial Furniture AI Team`;
-
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'html' | 'text') => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedType(type);
+    setTimeout(() => setCopiedType(null), 2000);
   };
 
   return (
@@ -197,15 +184,26 @@ The Spatial Furniture AI Team`;
         {activeTab === 'console' && (
           <div className="bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
             <div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                Manual Firebase Console Configuration Guide
-              </span>
-              <h2 className="text-xl font-bold text-white mt-2">
-                How to configure Firebase to use your custom verification email and handler
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                  Firebase Console Configuration Guide
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Spark Plan Compatible
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-white">
+                How to configure Firebase Console to deliver this branded verification email
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Firebase Authentication default templates cannot be altered by application code alone. Follow these 3 simple console steps:
-              </p>
+              <div className="mt-3 p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 space-y-2">
+                <p className="font-semibold text-amber-400">Important Firebase Spark Plan Limitation Note:</p>
+                <p className="leading-relaxed">
+                  Firebase Authentication delivers verification emails from Google&apos;s mail infrastructure. Changing files in your Next.js Git repository will <strong>not</strong> automatically change the emails delivered by Firebase. You must update the template in the <strong>Firebase Console</strong>.
+                </p>
+                <p className="leading-relaxed text-slate-400">
+                  On the free Firebase Spark plan, standard templates support inline HTML formatting or clean plain text. Follow the 3 configuration steps below to match the branded design:
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -217,10 +215,10 @@ The Spatial Furniture AI Team`;
                 <h3 className="font-bold text-sm text-white">Customize Action URL</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Go to <strong>Firebase Console &rarr; Authentication &rarr; Templates &rarr; Email address verification</strong>.
-                  Click the <strong>edit icon</strong>, then click <strong>&quot;Customize action URL&quot;</strong> at the bottom.
+                  Click the <strong>edit icon (pencil)</strong>, then click <strong>&quot;Customize action URL&quot;</strong> at the bottom.
                 </p>
                 <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-[11px] text-amber-300 break-all border border-slate-800">
-                  https://your-domain.com/auth/action
+                  https://your-domain.vercel.app/auth/action
                 </div>
               </div>
 
@@ -232,10 +230,10 @@ The Spatial Furniture AI Team`;
                 <h3 className="font-bold text-sm text-white">Add Authorized Domain</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Go to <strong>Authentication &rarr; Settings &rarr; Authorized domains</strong>.
-                  Add your production domain (e.g., <code className="text-amber-300 font-mono">spatial-furniture-ai.vercel.app</code> or your custom domain).
+                  Add your production Vercel domain (e.g., <code className="text-amber-300 font-mono">spatial-furniture-ai.vercel.app</code>).
                 </p>
                 <div className="bg-slate-950 p-2.5 rounded-lg text-[11px] text-slate-300 border border-slate-800">
-                  Ensures <code className="text-amber-300 font-mono">ActionCodeSettings</code> continue URL is authorized.
+                  Allows Firebase to redirect and authorize action codes securely.
                 </div>
               </div>
 
@@ -249,27 +247,56 @@ The Spatial Furniture AI Team`;
                   In the template settings, set the <strong>Sender name</strong> to <strong className="text-white">Spatial Furniture AI</strong> and the <strong>Subject</strong> to:
                 </p>
                 <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-[11px] text-amber-300 border border-slate-800">
-                  Verify your email address for Spatial Furniture AI
+                  {consoleConfig.subject}
                 </div>
               </div>
             </div>
 
-            {/* Copyable Console Template Box */}
+            {/* Template Option 1: Styled HTML Message Body */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Recommended Firebase Console Template Content
-                </label>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                    Option A: Styled HTML Message Body (Recommended)
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Paste directly into the Message body in Firebase Console for rich dark navy &amp; white card styling.
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(firebaseConsoleTemplate)}
-                  className="px-3 py-1 rounded-lg text-xs font-medium bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors"
+                  onClick={() => copyToClipboard(consoleConfig.recommendedConsoleHtmlBody, 'html')}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors shrink-0"
                 >
-                  {copied ? 'Copied to Clipboard!' : 'Copy Template'}
+                  {copiedType === 'html' ? 'Copied HTML!' : 'Copy HTML Template'}
+                </button>
+              </div>
+              <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-x-auto max-h-60">
+                {consoleConfig.recommendedConsoleHtmlBody}
+              </pre>
+            </div>
+
+            {/* Template Option 2: Clean Plain-Text Fallback */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                    Option B: Plain-Text Message Body (Standard Editor Fallback)
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Use if your Firebase Console project strips HTML tags.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(consoleConfig.recommendedConsolePlainTextBody, 'text')}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-amber-400 hover:bg-slate-700 border border-amber-500/30 transition-colors shrink-0"
+                >
+                  {copiedType === 'text' ? 'Copied Plain Text!' : 'Copy Plain Text'}
                 </button>
               </div>
               <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-x-auto">
-                {firebaseConsoleTemplate}
+                {consoleConfig.recommendedConsolePlainTextBody}
               </pre>
             </div>
           </div>
