@@ -56,5 +56,12 @@ service cloud.firestore {
       // Allow delete only if the user is a retailer and they own the product, or if user is admin
       allow delete: if (isRetailer() && resource.data.retailerId == request.auth.uid) || isAdmin();
     }
+
+    // Match the email_rate_limits collection:
+    // Strictly forbid direct client read, write, update, or delete.
+    // Server-side Firebase Admin SDK bypasses rules and manages rate limits securely.
+    match /email_rate_limits/{userId} {
+      allow read, write: if false;
+    }
   }
 }

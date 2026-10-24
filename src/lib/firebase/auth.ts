@@ -14,7 +14,11 @@ import {
   validateFullName, 
   validatePassword 
 } from '@/lib/utils/validation';
-import { recordSuccessfulResend, recordThrottleCooldown } from '@/lib/utils/resendRateLimiter';
+import { 
+  checkResendRateLimit,
+  recordSuccessfulResend, 
+  recordThrottleCooldown 
+} from '@/lib/utils/resendRateLimiter';
 
 export type AllowedRegistrationRole = 'customer' | 'retailer';
 
@@ -186,14 +190,133 @@ export const sendVerificationEmail = async (
     return;
   }
 
+  // Pre-dispatch Rate Limit Check: Enforce rate limits before ANY network attempt
+  const preCheck = checkResendRateLimit(targetUser.uid, Date.now(), targetUser.email || undefined);
+  if (!preCheck.allowed) {
+    const error = new Error(
+      preCheck.reason === 'hourly_limit'
+        ? `Rate limit reached. Please wait ${Math.ceil(preCheck.retryAfterSeconds / 60)} minute(s) before requesting another email.`
+        : `Please wait ${preCheck.cooldownSeconds || preCheck.retryAfterSeconds} seconds before requesting another email.`
+    );
+    (error as unknown as { code: string }).code = 'auth/too-many-requests';
+    throw error;
+  }
+
   const settings = actionCodeSettings ?? getActionCodeSettings();
   const uidPrefix = targetUser.uid.substring(0, 6);
   console.info(`[auth] Initiating sendEmailVerification: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, uidPrefix=${uidPrefix}, hasCustomSettings=${Boolean(settings)}`);
 
+  let serverReservationId: string | undefined;
+
+  // 1. Attempt server-side custom email dispatch (Nodemailer / Gmail SMTP with professional branded template)
+  if (typeof window !== 'undefined' && targetUser.email) {
+    try {
+      let idToken: string | undefined;
+      if (typeof targetUser.getIdToken === 'function') {
+        try {
+          idToken = await targetUser.getIdToken();
+        } catch {
+          // Token might not be ready yet upon immediate registration
+        }
+      }
+
+      if (idToken) {
+        const response = await fetch('/api/auth/send-verification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            name: targetUser.displayName || undefined,
+          }),
+        });
+
+        // If server responded with 429 Too Many Requests, DO NOT fall back to native sender
+        if (response.status === 429) {
+          const rateData = await response.json().catch(() => ({}));
+          const error = new Error(rateData.error || 'Rate limit exceeded. Please wait before requesting another verification email.');
+          (error as unknown as { code: string }).code = 'auth/too-many-requests';
+          throw error;
+        }
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.info(`[auth] Custom branded verification email sent via /api/auth/send-verification: uidPrefix=${uidPrefix}`);
+            return;
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          serverReservationId = errorData.reservationId;
+        }
+      }
+    } catch (apiErr: unknown) {
+      // If throttled by server rate limiter, re-throw immediately and block native fallback
+      const errCode = (apiErr && typeof apiErr === 'object' && 'code' in apiErr) ? (apiErr as { code: string }).code : '';
+      if (errCode === 'auth/too-many-requests') {
+        throw apiErr;
+      }
+      // Otherwise, allow fallback to client SDK dispatch below
+    }
+  }
+
+  // 2. Client SDK fallback: Sends email via Firebase native mailer if custom mailer is not configured or in tests
+  // CRITICAL: Check rate limit AGAIN before native dispatch to ensure fallback cannot silently bypass rate limits!
+  const fallbackCheck = checkResendRateLimit(targetUser.uid, Date.now(), targetUser.email || undefined);
+  if (!fallbackCheck.allowed) {
+    if (serverReservationId && typeof targetUser.getIdToken === 'function') {
+      targetUser.getIdToken().then((tok) => {
+        if (tok) {
+          fetch('/api/auth/send-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tok}` },
+            body: JSON.stringify({ action: 'release', reservationId: serverReservationId }),
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+    const error = new Error(
+      fallbackCheck.reason === 'hourly_limit'
+        ? `Rate limit reached. Please wait ${Math.ceil(fallbackCheck.retryAfterSeconds / 60)} minute(s) before requesting another email.`
+        : `Please wait ${fallbackCheck.cooldownSeconds || fallbackCheck.retryAfterSeconds} seconds before requesting another email.`
+    );
+    (error as unknown as { code: string }).code = 'auth/too-many-requests';
+    throw error;
+  }
+
   try {
     await sendEmailVerification(targetUser, settings);
     console.info(`[auth] sendEmailVerification succeeded: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, uidPrefix=${uidPrefix}`);
+
+    // Commit server-side reservation if native send succeeded
+    if (serverReservationId && typeof targetUser.getIdToken === 'function') {
+      targetUser.getIdToken().then((tok) => {
+        if (tok) {
+          fetch('/api/auth/send-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tok}` },
+            body: JSON.stringify({ action: 'commit', reservationId: serverReservationId }),
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
   } catch (error: unknown) {
+    // Release server reservation if native send failed
+    if (serverReservationId && typeof targetUser.getIdToken === 'function') {
+      const errCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : '';
+      const isTimeout = errCode === 'auth/network-request-failed';
+      targetUser.getIdToken().then((tok) => {
+        if (tok) {
+          fetch('/api/auth/send-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tok}` },
+            body: JSON.stringify({ action: 'release', reservationId: serverReservationId, isTimeout }),
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     const errorCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
     console.error(`[auth] sendEmailVerification failed: operation=sendVerificationEmail, timestamp=${new Date().toISOString()}, code=${errorCode}`);
 

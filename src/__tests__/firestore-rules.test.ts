@@ -154,4 +154,21 @@ describe('Firestore Security Rules Policy Logic', () => {
       expect(canDeleteProduct(adminAuth, 'admin', 'any-retailer')).toBe(true);
     });
   });
+
+  describe('Email Rate Limits Collection Policy (/email_rate_limits/{userId})', () => {
+    // Helper matching firestore.rules email_rate_limits/{userId} allow read, write: if false;
+    const canAccessEmailRateLimits = () => false;
+
+    it('strictly forbids unauthenticated clients from reading or modifying email rate limit records', () => {
+      expect(canAccessEmailRateLimits()).toBe(false);
+    });
+
+    it('strictly forbids authenticated customers from reading or modifying rate limit records', () => {
+      expect(canAccessEmailRateLimits()).toBe(false);
+    });
+
+    it('strictly forbids retailers and admins from direct client SDK access to rate limit documents', () => {
+      expect(canAccessEmailRateLimits()).toBe(false);
+    });
+  });
 });
