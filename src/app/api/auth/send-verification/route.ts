@@ -1,141 +1,170 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, isFirebaseAdminReady, getAdminConfigStatus } from '@/lib/firebase/admin';
-import { sendCustomVerificationEmail, getMailerConfigStatus } from '@/lib/email/mailer';
+import {
+  getAdminAuth,
+  isFirebaseAdminReady,
+  getAdminConfigStatus,
+} from '@/lib/firebase/admin';
+import {
+  sendCustomVerificationEmail,
+  getMailerConfigStatus,
+} from '@/lib/email/mailer';
 import { verifyAuthToken } from '@/lib/firebase/serverAuth';
-import { 
-  reserveResendSlot, 
-  commitResendSlot, 
-  releaseResendSlot 
+import {
+  reserveResendSlot,
+  commitResendSlot,
+  releaseResendSlot,
 } from '@/lib/firebase/firestoreRateLimiter';
 import { recordSuccessfulResend } from '@/lib/utils/resendRateLimiter';
 
 /**
- * Returns the canonical base URL for the verification link.
+ * Canonical production URL used for Firebase email verification.
+ * The hostname must be listed in Firebase Authentication
+ * > Settings > Authorized domains.
  */
-function getActionBaseUrl(req: NextRequest): string {
-  const envUrl = process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : undefined) ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
-
-  if (envUrl) {
-    return envUrl.replace(/\/$/, '');
-  }
-
-  const host = req.headers.get('host');
-  const proto = req.headers.get('x-forwarded-proto') || 'http';
-  if (host) {
-    return `${proto}://${host}`;
-  }
-
-  return 'http://localhost:3000';
-}
+const APP_BASE_URL = 'https://spatial-furniture-ai.vercel.app';
+const EMAIL_ACTION_URL = `${APP_BASE_URL}/auth/action`;
 
 /**
- * Resolves and verifies the authenticated Firebase user from the Authorization header.
- * First attempts server-side cryptographic verification via Firebase Admin SDK.
- * If Admin SDK is unavailable or token verification fails via Admin SDK, falls back
- * to Google Identity Toolkit REST API verification.
+ * Resolves and verifies the authenticated Firebase user from
+ * the Authorization header.
+ *
+ * First attempts verification using Firebase Admin SDK.
+ * If that fails, falls back to Identity Toolkit verification.
  */
-export async function resolveVerifiedUser(req: NextRequest): Promise<{ uid: string; email?: string; emailVerified: boolean } | null> {
+export async function resolveVerifiedUser(
+  req: NextRequest,
+): Promise<{
+  uid: string;
+  email?: string;
+  emailVerified: boolean;
+} | null> {
   const authHeader = req.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+
+  if (!authHeader?.startsWith('Bearer ')) {
     return null;
   }
 
-  const token = authHeader.split('Bearer ')[1]?.trim();
-  if (!token) return null;
+  const token = authHeader.slice('Bearer '.length).trim();
 
-  // 1. If Firebase Admin is ready, verify token cryptographically server-side
+  if (!token) {
+    return null;
+  }
+
+  // 1. Verify through Firebase Admin when available.
   if (isFirebaseAdminReady()) {
     const adminAuth = getAdminAuth();
+
     if (adminAuth) {
       try {
         const decoded = await adminAuth.verifyIdToken(token);
+
         return {
           uid: decoded.uid,
           email: decoded.email,
           emailVerified: Boolean(decoded.email_verified),
         };
       } catch (err: unknown) {
-        const errCode = (err && typeof err === 'object' && 'code' in err) ? (err as { code: string }).code : 'unknown';
-        console.warn(`[sendVerificationApi] Admin token verification error: code=${errCode}`);
+        const errCode =
+          err && typeof err === 'object' && 'code' in err
+            ? (err as { code: string }).code
+            : 'unknown';
+
+        console.warn(
+          `[sendVerificationApi] Admin token verification failed: code=${errCode}`,
+        );
       }
     }
   }
 
-  // 2. Identity Toolkit REST API verification fallback
+  // 2. Fall back to Identity Toolkit token verification.
   return await verifyAuthToken(req);
 }
 
 /**
  * POST /api/auth/send-verification
- * 
- * Generates an authentic Firebase verification link on the server via Firebase Admin SDK
- * and dispatches a branded HTML email using Nodemailer / Gmail SMTP.
- * 
- * Security & Serverless Persistence:
- * - Strictly verifies Firebase ID tokens server-side (returns 401 if unauthenticated).
- * - Recipient email derived strictly from verified token claims; body.email overrides are ignored.
- * - Enforces rolling 1-hour limit (max 5) and 60-second cooldown in Firestore ('email_rate_limits').
- * - Two-phase reservation/commit/release protocol prevents race conditions across Vercel instances.
- * - Definitively failed dispatches release the reservation without consuming quota.
- * - Ambiguous timeouts enforce cooldown to prevent spam while preserving hourly quota.
- * - Verification URLs and credentials are never logged or exposed in API responses.
+ *
+ * Generates a Firebase email verification link and sends it
+ * through the configured custom email service.
  */
 export async function POST(req: NextRequest) {
+  let targetUid: string | undefined;
+  let reservationId: string | undefined;
+
   try {
-    // 1. Strictly verify user authentication via Firebase ID token
+    // 1. Authenticate the user.
     const verifiedUser = await resolveVerifiedUser(req);
+
     if (!verifiedUser) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Unauthorized: A valid Firebase authentication token is required.' 
+        {
+          success: false,
+          error:
+            'Unauthorized: A valid Firebase authentication token is required.',
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    // Parse body safely
-    let body: { action?: string; reservationId?: string; isTimeout?: boolean; name?: string } = {};
+    targetUid = verifiedUser.uid;
+
+    // Parse optional request body.
+    let body: {
+      action?: string;
+      reservationId?: string;
+      isTimeout?: boolean;
+      name?: string;
+    } = {};
+
     try {
       body = await req.json();
     } catch {
-      // Body is optional
+      // An empty body is permitted.
     }
 
-    const targetUid = verifiedUser.uid;
-    const targetEmail = verifiedUser.email?.trim() || '';
-
-    // Handle auxiliary reservation management actions (e.g. for tracked fallback commits/releases)
+    // Handle reservation commit/release operations.
     if (body.action === 'commit' && body.reservationId) {
-      const commitRes = await commitResendSlot(targetUid, body.reservationId);
-      if (!commitRes.success) {
+      const result = await commitResendSlot(
+        targetUid,
+        body.reservationId,
+      );
+
+      if (!result.success) {
         return NextResponse.json(
-          { success: false, error: commitRes.error || 'Invalid or expired reservation.' },
-          { status: 400 }
+          {
+            success: false,
+            error: result.error || 'Invalid or expired reservation.',
+          },
+          { status: 400 },
         );
       }
-      return NextResponse.json({ success: true, rateStatus: commitRes });
+
+      return NextResponse.json({
+        success: true,
+        rateStatus: result,
+      });
     }
 
     if (body.action === 'release' && body.reservationId) {
-      await releaseResendSlot(targetUid, body.reservationId, { isTimeout: Boolean(body.isTimeout) });
+      await releaseResendSlot(targetUid, body.reservationId, {
+        isTimeout: Boolean(body.isTimeout),
+      });
+
       return NextResponse.json({ success: true });
     }
 
-    // 2. Extract recipient strictly from verified ID token to prevent unauthorized email dispatch
+    // 2. Get the email only from the verified token.
+    const targetEmail = verifiedUser.email?.trim() || '';
+
     if (!targetEmail) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Authenticated user account has no associated email address.' 
+        {
+          success: false,
+          error: 'Authenticated user account has no associated email address.',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // If user is already verified, do not re-send
     if (verifiedUser.emailVerified) {
       return NextResponse.json({
         success: true,
@@ -146,14 +175,20 @@ export async function POST(req: NextRequest) {
 
     const targetName = body.name?.trim() || undefined;
 
-    // 3. Phase 1: Atomically reserve a dispatch slot in Firestore across all serverless instances
+    // 3. Reserve a rate-limit slot.
     const reservation = await reserveResendSlot(targetUid);
+
     if (!reservation.allowed) {
-      const retryMsg = reservation.reason === 'hourly_limit'
-        ? `Rate limit reached. Please wait ${Math.ceil(reservation.retryAfterSeconds / 60)} minute(s) before requesting another email.`
-        : reservation.reason === 'in_flight'
-        ? 'A verification request is currently in progress. Please wait a moment.'
-        : `Please wait ${reservation.cooldownSeconds || reservation.retryAfterSeconds} seconds before requesting another email.`;
+      const retryMsg =
+        reservation.reason === 'hourly_limit'
+          ? `Rate limit reached. Please wait ${Math.ceil(
+            reservation.retryAfterSeconds / 60,
+          )} minute(s) before requesting another email.`
+          : reservation.reason === 'in_flight'
+            ? 'A verification request is currently in progress. Please wait a moment.'
+            : `Please wait ${reservation.cooldownSeconds ||
+            reservation.retryAfterSeconds
+            } seconds before requesting another email.`;
 
       return NextResponse.json(
         {
@@ -161,22 +196,29 @@ export async function POST(req: NextRequest) {
           error: retryMsg,
           rateStatus: reservation,
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
-    const reservationId = reservation.reservationId!;
+    reservationId = reservation.reservationId!;
 
-    // 4. Verify server-side dependencies are ready
+    // 4. Verify server configuration.
     const adminStatus = getAdminConfigStatus();
     const mailerStatus = getMailerConfigStatus();
 
     if (!adminStatus.isReady || !mailerStatus.isConfigured) {
-      await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'unconfigured_server' });
+      await releaseResendSlot(targetUid, reservationId, {
+        isTimeout: false,
+        failureReason: 'unconfigured_server',
+      });
+
+      reservationId = undefined;
+
       return NextResponse.json(
         {
           success: false,
-          error: 'Email verification service is not fully configured on the server. Please verify environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, SMTP_USER, SMTP_PASS) in Vercel.',
+          error:
+            'Email verification service is not fully configured on the server. Check the Firebase Admin and SMTP environment variables in Vercel.',
           configStatus: {
             adminReady: adminStatus.isReady,
             hasProjectId: adminStatus.hasProjectId,
@@ -187,51 +229,71 @@ export async function POST(req: NextRequest) {
             hasSmtpPass: mailerStatus.hasPass,
           },
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     const adminAuth = getAdminAuth();
+
     if (!adminAuth) {
-      await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'admin_init_failed' });
+      await releaseResendSlot(targetUid, reservationId, {
+        isTimeout: false,
+        failureReason: 'admin_init_failed',
+      });
+
+      reservationId = undefined;
+
       return NextResponse.json(
         {
           success: false,
-          error: 'Firebase Admin Auth could not be initialized. Please verify the FIREBASE_PRIVATE_KEY format on the server.',
+          error:
+            'Firebase Admin Auth could not be initialized. Check the Firebase Admin environment configuration.',
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    // 5. Generate genuine Firebase email verification link via Admin SDK
-    const baseUrl = getActionBaseUrl(req);
+    // 5. Generate the Firebase verification link using the
+    // exact production continue URL.
     const actionCodeSettings = {
-      url: `${baseUrl}/auth/action`,
+      url: EMAIL_ACTION_URL,
       handleCodeInApp: true,
     };
 
     let actionLink: string;
-    try {
-      actionLink = await adminAuth.generateEmailVerificationLink(targetEmail, actionCodeSettings);
-    } catch (genErr: unknown) {
-      const errCode = (genErr && typeof genErr === 'object' && 'code' in genErr)
-        ? (genErr as { code: string }).code
-        : 'unknown';
-      console.error(`[sendVerificationApi] Link generation failed: code=${errCode}`);
 
-      // Release reserved slot since link generation failed before sending
-      await releaseResendSlot(targetUid, reservationId, { isTimeout: false, failureReason: 'link_generation_failed' });
+    try {
+      actionLink = await adminAuth.generateEmailVerificationLink(
+        targetEmail,
+        actionCodeSettings,
+      );
+    } catch (genErr: unknown) {
+      const errCode =
+        genErr && typeof genErr === 'object' && 'code' in genErr
+          ? (genErr as { code: string }).code
+          : 'unknown';
+
+      console.error(
+        `[sendVerificationApi] Link generation failed: code=${errCode}`,
+      );
+
+      await releaseResendSlot(targetUid, reservationId, {
+        isTimeout: false,
+        failureReason: 'link_generation_failed',
+      });
+
+      reservationId = undefined;
 
       return NextResponse.json(
         {
           success: false,
           error: `Failed to generate email verification link from Firebase Admin (code: ${errCode}).`,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    // 6. Send custom branded email with amber button via SMTP
+    // 6. Send the branded verification email.
     const mailResult = await sendCustomVerificationEmail({
       to: targetEmail,
       name: targetName,
@@ -241,38 +303,68 @@ export async function POST(req: NextRequest) {
     if (!mailResult.success) {
       console.error('[sendVerificationApi] Mail dispatch failed');
 
-      // Phase 3: Release slot with ambiguous timeout awareness
-      const isTimeout = Boolean(mailResult.isTimeout);
-      await releaseResendSlot(targetUid, reservationId, { 
-        isTimeout, 
-        failureReason: mailResult.error 
+      await releaseResendSlot(targetUid, reservationId, {
+        isTimeout: Boolean(mailResult.isTimeout),
+        failureReason: mailResult.error,
       });
+
+      reservationId = undefined;
 
       return NextResponse.json(
         {
           success: false,
           error: 'Failed to dispatch verification email. Please try again later.',
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    // 7. Phase 2: Commit successful dispatch in Firestore & update local memory cache
-    const commitStatus = await commitResendSlot(targetUid, reservationId);
+    // 7. Commit the successful send.
+    const commitStatus = await commitResendSlot(
+      targetUid,
+      reservationId,
+    );
+
+    reservationId = undefined;
+
     recordSuccessfulResend(targetUid, Date.now(), targetEmail);
 
-    // 8. Return sanitized success response (NEVER return actionLink, oobCode, or secrets)
+    // 8. Never expose the generated action link or verification code.
     return NextResponse.json({
       success: true,
       message: 'Verification email dispatched successfully.',
       rateStatus: commitStatus,
     });
   } catch (error: unknown) {
-    const errCode = (error && typeof error === 'object' && 'code' in error) ? (error as { code: string }).code : 'unknown';
-    console.error(`[sendVerificationApi] Unexpected server error: code=${errCode}`);
+    const errCode =
+      error && typeof error === 'object' && 'code' in error
+        ? (error as { code: string }).code
+        : 'unknown';
+
+    console.error(
+      `[sendVerificationApi] Unexpected server error: code=${errCode}`,
+    );
+
+    // Release any reservation left by an unexpected failure.
+    if (targetUid && reservationId) {
+      try {
+        await releaseResendSlot(targetUid, reservationId, {
+          isTimeout: false,
+          failureReason: 'unexpected_server_error',
+        });
+      } catch {
+        console.error(
+          '[sendVerificationApi] Failed to release resend reservation.',
+        );
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Internal server error while processing verification.' },
-      { status: 500 }
+      {
+        success: false,
+        error: 'Internal server error while processing verification.',
+      },
+      { status: 500 },
     );
   }
 }
