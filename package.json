@@ -24,6 +24,13 @@
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
+  
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "4.15.9"
+    }
+  },
+
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
