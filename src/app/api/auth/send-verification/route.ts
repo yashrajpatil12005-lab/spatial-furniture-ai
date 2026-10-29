@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
     // 5. Generate the Firebase verification link using the
     // exact production continue URL.
     const actionCodeSettings = {
-      url: EMAIL_ACTION_URL,
+      url: 'https://spatial-furniture-ai.vercel.app/verify-email?verified=1',
       handleCodeInApp: true,
     };
 
