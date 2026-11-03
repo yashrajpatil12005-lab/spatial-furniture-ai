@@ -22,7 +22,7 @@ import { recordSuccessfulResend } from '@/lib/utils/resendRateLimiter';
  * > Settings > Authorized domains.
  */
 const APP_BASE_URL = 'https://spatial-furniture-ai.vercel.app';
-const EMAIL_ACTION_URL = `${APP_BASE_URL}/auth/action`;
+const EMAIL_ACTION_URL = `${APP_BASE_URL}/verify-email?verified=1`;
 
 /**
  * Resolves and verifies the authenticated Firebase user from
@@ -31,7 +31,7 @@ const EMAIL_ACTION_URL = `${APP_BASE_URL}/auth/action`;
  * First attempts verification using Firebase Admin SDK.
  * If that fails, falls back to Identity Toolkit verification.
  */
-export async function resolveVerifiedUser(
+async function resolveVerifiedUser(
   req: NextRequest,
 ): Promise<{
   uid: string;
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
     // 5. Generate the Firebase verification link using the
     // exact production continue URL.
     const actionCodeSettings = {
-      url: 'https://spatial-furniture-ai.vercel.app/verify-email?verified=1',
+      url: EMAIL_ACTION_URL,
       handleCodeInApp: true,
     };
 

@@ -110,6 +110,16 @@ describe('Live Firebase Email Verification & Token Security Integration', () => 
       try {
         // 1. Create a real user in Firebase Auth
         userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'auth/network-request-failed') {
+          console.info('[live-firebase.integration.test.ts] Network unreachable, skipping live Firebase network test.');
+          ctx.skip();
+          return;
+        }
+        throw err;
+      }
+
+      try {
         const user = userCredential.user;
 
       expect(user.uid).toBeDefined();

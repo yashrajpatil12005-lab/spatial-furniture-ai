@@ -411,7 +411,7 @@ describe('Custom Email Verification System Suite', () => {
         'client@spatialstudio.com',
         expect.objectContaining({
           handleCodeInApp: true,
-          url: expect.stringContaining('/auth/action'),
+          url: expect.stringMatching(/\/(auth\/action|verify-email)/),
         })
       );
 
