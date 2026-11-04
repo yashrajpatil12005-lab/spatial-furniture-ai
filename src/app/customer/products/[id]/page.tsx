@@ -1,4 +1,4 @@
-
+﻿
 'use client';
 
 import { useEffect, useState, use } from 'react';
@@ -51,10 +51,18 @@ export default function CustomerProductDetailPage({
     }
   }, [resolvedParams.id, authLoading]);
 
-  // Enable AR only for chair products
-  const isChair =
-    product?.category?.toLowerCase().includes('chair') ||
-    product?.name?.toLowerCase().includes('chair');
+  // Detect supported AR furniture
+const category = product?.category?.toLowerCase() || '';
+const productName = product?.name?.toLowerCase() || '';
+
+const isChair = category.includes('chair') || productName.includes('chair');
+const isSofa = category.includes('sofa') || productName.includes('sofa');
+
+const isARSupported = isChair || isSofa;
+
+const arModelSrc = isSofa
+  ? '/models/sofa.glb'
+  : '/models/arm_chair.glb';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-8 sm:py-12 px-5 sm:px-8 lg:px-10">
@@ -164,9 +172,9 @@ export default function CustomerProductDetailPage({
               {/* Left: Product Image & Spatial Previews */}
               <div className="w-full lg:w-1/2 flex flex-col space-y-6">
                 <div className="relative aspect-h-4 aspect-w-5 sm:aspect-h-3 sm:aspect-w-4 w-full overflow-hidden rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                  {showAR && isChair ? (
+                  {showAR && isARSupported ? (
                     <ARModelViewer
-                      src="/models/arm_chair.glb"
+                      src={arModelSrc}
                       alt={product.name || '3D chair model'}
                       className="h-full w-full"
                     />
@@ -200,7 +208,7 @@ export default function CustomerProductDetailPage({
                   )}
 
                   {/* Mode switcher tab badge for chairs */}
-                  {isChair && (
+                  {isARSupported && (
                     <div className="absolute top-3 right-3 z-20 flex bg-white/90 backdrop-blur-xs rounded-lg p-0.5 border border-[#E2E8F0] shadow-xs text-xs">
                       <button
                         type="button"
@@ -262,7 +270,7 @@ export default function CustomerProductDetailPage({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                   {/* AR Button: Chair only */}
-                  {isChair ? (
+                  {isARSupported ? (
                     <button
                       type="button"
                       onClick={() => setShowAR((prev) => !prev)}
@@ -286,7 +294,7 @@ export default function CustomerProductDetailPage({
                     <button
                       type="button"
                       disabled
-                      title="AR preview is currently available only for chairs"
+                      title="AR preview is available only for chairs and sofas"
                       className="w-full py-3 px-4 rounded-xl border border-[#E2E8F0] bg-[#F1F5F9] text-xs font-semibold text-[#94A3B8] cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,7 +305,7 @@ export default function CustomerProductDetailPage({
                           d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
                         />
                       </svg>
-                      <span>AR Preview — Chairs Only</span>
+                      <span>AR Preview — Chairs & Sofas Only</span>
                     </button>
                   )}
 
@@ -361,15 +369,15 @@ export default function CustomerProductDetailPage({
                     <div>
                       {product.stock > 5 ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]">
-                          ● In Stock ({product.stock} units)
+                          â— In Stock ({product.stock} units)
                         </span>
                       ) : product.stock > 0 ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
-                          ● Low Stock ({product.stock} left)
+                          â— Low Stock ({product.stock} left)
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]">
-                          ● Out of Stock
+                          â— Out of Stock
                         </span>
                       )}
                     </div>
@@ -447,3 +455,4 @@ export default function CustomerProductDetailPage({
     </div>
   );
 }
+
