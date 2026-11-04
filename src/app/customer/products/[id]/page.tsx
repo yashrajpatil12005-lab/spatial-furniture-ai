@@ -52,17 +52,30 @@ export default function CustomerProductDetailPage({
   }, [resolvedParams.id, authLoading]);
 
   // Detect supported AR furniture
+// Detect supported furniture for AR
+// Detect supported furniture for AR
 const category = product?.category?.toLowerCase() || '';
 const productName = product?.name?.toLowerCase() || '';
 
-const isChair = category.includes('chair') || productName.includes('chair');
-const isSofa = category.includes('sofa') || productName.includes('sofa');
+const isChair =
+  category.includes('chair') || productName.includes('chair');
 
-const isARSupported = isChair || isSofa;
+const isSofa =
+  category.includes('sofa') || productName.includes('sofa');
 
-const arModelSrc = isSofa
-  ? '/models/sofa.glb'
-  : '/models/arm_chair.glb';
+const isDiningTable =
+  category.includes('dining table') ||
+  productName.includes('dining table') ||
+  category.includes('table') ||
+  productName.includes('table');
+
+const isARSupported = isChair || isSofa || isDiningTable;
+
+const arModelSrc = isDiningTable
+  ? '/models/dining_table.glb'
+  : isSofa
+    ? '/models/sofa.glb'
+    : '/models/arm_chair.glb';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-8 sm:py-12 px-5 sm:px-8 lg:px-10">
@@ -455,4 +468,6 @@ const arModelSrc = isSofa
     </div>
   );
 }
+
+
 
