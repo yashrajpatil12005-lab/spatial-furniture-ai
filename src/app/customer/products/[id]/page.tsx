@@ -52,6 +52,7 @@ export default function CustomerProductDetailPage({
     }
   }, [resolvedParams.id, authLoading]);
 
+  // Track customer product views
   useEffect(() => {
     if (!product || !user || authLoading) return;
 
@@ -65,36 +66,42 @@ export default function CustomerProductDetailPage({
       `/customer/products/${resolvedParams.id}`
     );
   }, [product, user, authLoading, resolvedParams.id]);
-  // Detect supported AR furniture
-// Detect supported furniture for AR
-// Detect supported furniture for AR
-const category = product?.category?.toLowerCase() || '';
-const productName = product?.name?.toLowerCase() || '';
 
-const isChair =
-  category.includes('chair') || productName.includes('chair');
+  // Detect furniture category
+  const category = product?.category?.toLowerCase() || '';
+  const productName = product?.name?.toLowerCase() || '';
 
-const isSofa =
-  category.includes('sofa') || productName.includes('sofa');
+  const isChair =
+    category.includes('chair') ||
+    productName.includes('chair');
 
-const isStudyTable =
-  category.includes('study table') ||
-  productName.includes('study table');
+  const isSofa =
+    category.includes('sofa') ||
+    productName.includes('sofa');
 
-const isDiningTable =
-  !isStudyTable &&
-  (
-    category.includes('dining table') ||
-    productName.includes('dining table')
-  );
+  const isStudyTable =
+    category.includes('study table') ||
+    productName.includes('study table');
 
-const isARSupported = isChair || isSofa || isDiningTable;
+  const isDiningTable =
+    !isStudyTable &&
+    (
+      category.includes('dining table') ||
+      productName.includes('dining table')
+    );
 
-const arModelSrc = isDiningTable
-  ? '/models/dining_table.glb'
-  : isSofa
-    ? '/models/sofa.glb'
-    : '/models/arm_chair.glb';
+  const isARSupported =
+    isChair || isSofa || isDiningTable;
+
+  // IMPORTANT: Use the product-specific model URL first.
+  // If no custom URL exists, use the existing default model.
+  const arModelSrc = product?.model3dUrl?.trim()
+    ? product.model3dUrl.trim()
+    : isDiningTable
+      ? '/models/dining_table.glb'
+      : isSofa
+        ? '/models/sofa.glb'
+        : '/models/arm_chair.glb';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] py-8 sm:py-12 px-5 sm:px-8 lg:px-10">
@@ -114,21 +121,25 @@ const arModelSrc = isDiningTable
             <Link href="/" className="hover:text-[#111827] transition-colors">
               Home
             </Link>
+
             <span>/</span>
+
             <Link
               href="/customer/products"
               className="hover:text-[#111827] transition-colors"
             >
               Catalog
             </Link>
+
             <span>/</span>
+
             <span className="text-[#111827] font-semibold truncate max-w-[220px]">
               {product?.name || 'Loading...'}
             </span>
           </nav>
         </div>
 
-        {/* In-app Notice Banner */}
+        {/* Notice Banner */}
         {notice && (
           <div className="p-4 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-xs text-[#065F46] font-medium flex items-center justify-between shadow-xs animate-fadeIn">
             <div className="flex items-center gap-2">
@@ -145,6 +156,7 @@ const arModelSrc = isDiningTable
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
+
               <span>{notice}</span>
             </div>
 
@@ -184,8 +196,13 @@ const arModelSrc = isDiningTable
               </svg>
             </div>
 
-            <p className="text-red-600 font-semibold mb-1">Product Notice</p>
-            <p className="text-[#64748B] text-sm mb-6">{error}</p>
+            <p className="text-red-600 font-semibold mb-1">
+              Product Notice
+            </p>
+
+            <p className="text-[#64748B] text-sm mb-6">
+              {error}
+            </p>
 
             <Link
               href="/customer/products"
@@ -196,18 +213,20 @@ const arModelSrc = isDiningTable
           </div>
         )}
 
-        {/* Product Details Card */}
+        {/* Product Details */}
         {!loading && !error && product && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-10 card-shadow">
             <div className="flex flex-col lg:flex-row gap-10">
 
-              {/* Left: Product Image & Spatial Previews */}
+              {/* Left: Product Image & AR Preview */}
               <div className="w-full lg:w-1/2 flex flex-col space-y-6">
                 <div className="relative aspect-h-4 aspect-w-5 sm:aspect-h-3 sm:aspect-w-4 w-full overflow-hidden rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+
                   {showAR && isARSupported ? (
                     <ARModelViewer
+                      key={`${product.id || resolvedParams.id}-${arModelSrc}`}
                       src={arModelSrc}
-                      alt={product.name || '3D chair model'}
+                      alt={product.name || '3D furniture model'}
                       className="h-full w-full"
                     />
                   ) : product.imageUrl && !imageError ? (
@@ -230,16 +249,17 @@ const arModelSrc = isDiningTable
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={1.25}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2v12a2 2 0 002 2z"
                         />
                       </svg>
+
                       <span className="text-xs font-medium">
                         Image Preview Unavailable
                       </span>
                     </div>
                   )}
 
-                  {/* Mode switcher tab badge for chairs */}
+                  {/* Mode Switcher */}
                   {isARSupported && (
                     <div className="absolute top-3 right-3 z-20 flex bg-white/90 backdrop-blur-xs rounded-lg p-0.5 border border-[#E2E8F0] shadow-xs text-xs">
                       <button
@@ -253,6 +273,7 @@ const arModelSrc = isDiningTable
                       >
                         Photo
                       </button>
+
                       <button
                         type="button"
                         onClick={() => setShowAR(true)}
@@ -267,7 +288,7 @@ const arModelSrc = isDiningTable
                     </div>
                   )}
 
-                  {/* Customization Preview (when not in 3D AR mode) */}
+                  {/* Customization Preview */}
                   {customization && !showAR && (
                     <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md border border-[#E2E8F0] rounded-xl p-3 shadow-md">
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-[#047857] mb-1">
@@ -281,12 +302,14 @@ const arModelSrc = isDiningTable
                             {customization.color}
                           </strong>
                         </span>
+
                         <span>
                           Material:{' '}
                           <strong className="text-[#111827]">
                             {customization.material}
                           </strong>
                         </span>
+
                         <span>
                           Finish:{' '}
                           <strong className="text-[#111827]">
@@ -301,7 +324,7 @@ const arModelSrc = isDiningTable
                 {/* Action Buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-                  {/* AR Button: Chair only */}
+                  {/* AR Button */}
                   {isARSupported ? (
                     <button
                       type="button"
@@ -312,7 +335,12 @@ const arModelSrc = isDiningTable
                           : 'bg-[#ECFDF5] text-[#047857] border-[#A7F3D0] hover:bg-[#D1FAE5]'
                       }`}
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -320,28 +348,25 @@ const arModelSrc = isDiningTable
                           d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
                         />
                       </svg>
-                      <span>{showAR ? 'View 2D Photo' : 'Interactive AR Preview'}</span>
+
+                      <span>
+                        {showAR ? 'View 2D Photo' : 'Interactive AR Preview'}
+                      </span>
                     </button>
                   ) : (
                     <button
                       type="button"
                       disabled
-                      title="AR preview is available only for chairs and sofas"
+                      title="AR preview is available only for chairs, sofas and dining tables"
                       className="w-full py-3 px-4 rounded-xl border border-[#E2E8F0] bg-[#F1F5F9] text-xs font-semibold text-[#94A3B8] cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
-                        />
-                      </svg>
-                      <span>AR Preview — Chairs & Sofas Only</span>
+                      <span>
+                        AR Preview — Supported Furniture Only
+                      </span>
                     </button>
                   )}
 
-                  {/* AI Room Visualization Button */}
+                  {/* AI Visualization */}
                   <button
                     type="button"
                     onClick={() => {
@@ -365,12 +390,13 @@ const arModelSrc = isDiningTable
                         d="M13 10V3L4 14h7v7l9-11h-7z"
                       />
                     </svg>
+
                     <span>AI Room Visualize</span>
                   </button>
                 </div>
               </div>
 
-              {/* Right: Product Info & Customizer */}
+              {/* Right: Product Information */}
               <div className="w-full lg:w-1/2 flex flex-col space-y-6">
                 <div>
                   <div className="flex items-center justify-between gap-3 mb-2">
@@ -393,6 +419,7 @@ const arModelSrc = isDiningTable
                       <span className="text-xs text-[#64748B] block font-medium">
                         Price
                       </span>
+
                       <span className="text-3xl font-extrabold text-[#111827]">
                         {formatPrice(product.price)}
                       </span>
@@ -401,15 +428,15 @@ const arModelSrc = isDiningTable
                     <div>
                       {product.stock > 5 ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]">
-                          â— In Stock ({product.stock} units)
+                          ● In Stock ({product.stock} units)
                         </span>
                       ) : product.stock > 0 ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
-                          â— Low Stock ({product.stock} left)
+                          ● Low Stock ({product.stock} left)
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]">
-                          â— Out of Stock
+                          ● Out of Stock
                         </span>
                       )}
                     </div>
@@ -420,18 +447,20 @@ const arModelSrc = isDiningTable
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-[#475569] mb-2">
                       Description
                     </h3>
+
                     <p className="text-sm text-[#475569] leading-relaxed whitespace-pre-line">
                       {product.description ||
                         'No detailed description provided for this furniture model.'}
                     </p>
                   </div>
 
-                  {/* Dimensions & Specifications */}
+                  {/* Dimensions */}
                   <div className="mt-4 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div>
                       <span className="text-[#64748B] block font-medium">
                         Width
                       </span>
+
                       <span className="font-bold text-[#111827]">
                         {product.width} cm
                       </span>
@@ -441,6 +470,7 @@ const arModelSrc = isDiningTable
                       <span className="text-[#64748B] block font-medium">
                         Height
                       </span>
+
                       <span className="font-bold text-[#111827]">
                         {product.height} cm
                       </span>
@@ -450,6 +480,7 @@ const arModelSrc = isDiningTable
                       <span className="text-[#64748B] block font-medium">
                         Depth
                       </span>
+
                       <span className="font-bold text-[#111827]">
                         {product.depth} cm
                       </span>
@@ -459,6 +490,7 @@ const arModelSrc = isDiningTable
                       <span className="text-[#64748B] block font-medium">
                         Style
                       </span>
+
                       <span className="font-bold text-[#111827]">
                         {product.style || 'Modern'}
                       </span>
@@ -476,7 +508,7 @@ const arModelSrc = isDiningTable
           </div>
         )}
 
-        {/* AI Room Visualization Section */}
+        {/* AI Room Visualization */}
         {!loading && !error && product && customization && (
           <VisualizationPanel
             product={product}
@@ -487,9 +519,3 @@ const arModelSrc = isDiningTable
     </div>
   );
 }
-
-
-
-
-
-

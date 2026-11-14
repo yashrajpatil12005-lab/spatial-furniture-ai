@@ -1,6 +1,13 @@
+﻿
 'use client';
 
 import { useState } from 'react';
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from 'firebase/storage';
+import { storage } from '@/lib/firebase/config';
 import { Product } from '@/lib/types';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
 import { useRouter } from 'next/navigation';
@@ -14,10 +21,14 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const [imageProgress, setImageProgress] = useState(0);
+  const [modelProgress, setModelProgress] = useState(0);
+
   const isEditing = Boolean(initialData?.id);
 
   const [formData, setFormData] = useState({
@@ -37,30 +48,152 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     model3dUrl: initialData?.model3dUrl || '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'number' ? Number(value) : value
+      [name]: type === 'number' ? Number(value) : value,
     }));
   };
 
+  const uploadAsset = (
+    file: File,
+    assetType: 'images' | 'models',
+    onProgress: (progress: number) => void
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!user) {
+        reject(new Error('Please log in before uploading files.'));
+        return;
+      }
+
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      let contentType = file.type;
+
+      if (assetType === 'images') {
+        const allowed = ['png', 'jpg', 'jpeg', 'webp'];
+
+        if (!allowed.includes(extension)) {
+          reject(new Error('Choose a PNG, JPG, or WEBP image.'));
+          return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+          reject(new Error('Image size must be 10 MB or less.'));
+          return;
+        }
+
+        contentType =
+          extension === 'png'
+            ? 'image/png'
+            : extension === 'webp'
+              ? 'image/webp'
+              : 'image/jpeg';
+      } else {
+        if (!['glb', 'usdz'].includes(extension)) {
+          reject(new Error('Choose a GLB or USDZ 3D model.'));
+          return;
+        }
+
+        if (file.size > 100 * 1024 * 1024) {
+          reject(new Error('3D model size must be 100 MB or less.'));
+          return;
+        }
+
+        contentType =
+          extension === 'glb'
+            ? 'model/gltf-binary'
+            : 'model/vnd.usdz+zip';
+      }
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      const filePath = `product-media/${user.uid}/${assetType}/${Date.now()}-${safeName}`;
+
+      const storageRef = ref(storage, filePath);
+
+      const task = uploadBytesResumable(storageRef, file, {
+        contentType,
+      });
+
+      task.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = Math.round(
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+          );
+
+          onProgress(progress);
+        },
+        reject,
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(task.snapshot.ref);
+            resolve(downloadURL);
+          } catch (uploadError) {
+            reject(uploadError);
+          }
+        }
+      );
+    });
+  };
+
+  // Corrected product submission function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    
+
+    if (!user) {
+      setError('Please log in before saving a product.');
+      return;
+    }
+
     setLoading(true);
     setError('');
-    
+
     try {
-      if (initialData?.id) {
-        await updateProduct(initialData.id, formData);
-      } else {
-        await createProduct({ ...formData, retailerId: user.uid });
+      // Create payload from existing form data
+      const payload = { ...formData };
+
+      // Upload selected image
+      if (imageFile) {
+        payload.imageUrl = await uploadAsset(
+          imageFile,
+          'images',
+          setImageProgress
+        );
       }
+
+      // Upload selected 3D model
+      if (modelFile) {
+        payload.model3dUrl = await uploadAsset(
+          modelFile,
+          'models',
+          setModelProgress
+        );
+      }
+
+      // Create or update product
+      if (initialData?.id) {
+        await updateProduct(initialData.id, payload);
+      } else {
+        await createProduct({
+          ...payload,
+          retailerId: user.uid,
+        });
+      }
+
       router.push('/retailer/products');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An error occurred while saving the furniture item.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'An error occurred while saving the furniture item.';
+
       setError(msg);
       setLoading(false);
     }
@@ -80,7 +213,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           <h2 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
             1. Basic Information
           </h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Primary product identification and public naming</p>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Primary product identification and public naming
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
@@ -112,8 +247,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               onChange={handleChange}
               className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] font-medium focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
             >
-              {PRODUCT_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {PRODUCT_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
           </div>
@@ -141,69 +278,33 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           <h2 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
             2. Product Details &amp; Aesthetics
           </h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Attributes leveraged by Gemini AI for recommendations</p>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Attributes leveraged by Gemini AI for recommendations
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label htmlFor="product-brand" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Brand / Manufacturer
-            </label>
-            <input
-              id="product-brand"
-              type="text"
-              name="brand"
-              value={formData.brand}
-              onChange={handleChange}
-              placeholder="e.g. NordicWood, LuxeLiving"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-material" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Material
-            </label>
-            <input
-              id="product-material"
-              type="text"
-              name="material"
-              value={formData.material}
-              onChange={handleChange}
-              placeholder="e.g. Solid Oak, Velvet, Steel"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-color" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Color
-            </label>
-            <input
-              id="product-color"
-              type="text"
-              name="color"
-              value={formData.color}
-              onChange={handleChange}
-              placeholder="e.g. Charcoal Grey, Beige"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-style" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Design Style
-            </label>
-            <input
-              id="product-style"
-              type="text"
-              name="style"
-              value={formData.style}
-              onChange={handleChange}
-              placeholder="e.g. Modern, Minimalist, Scandinavian"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
-            />
-          </div>
+          {[
+            { name: 'brand', label: 'Brand / Manufacturer', placeholder: 'e.g. NordicWood, LuxeLiving' },
+            { name: 'material', label: 'Material', placeholder: 'e.g. Solid Oak, Velvet, Steel' },
+            { name: 'color', label: 'Color', placeholder: 'e.g. Charcoal Grey, Beige' },
+            { name: 'style', label: 'Design Style', placeholder: 'e.g. Modern, Minimalist, Scandinavian' },
+          ].map((field) => (
+            <div key={field.name}>
+              <label htmlFor={`product-${field.name}`} className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+                {field.label}
+              </label>
+              <input
+                id={`product-${field.name}`}
+                type="text"
+                name={field.name}
+                value={formData[field.name as 'brand' | 'material' | 'color' | 'style']}
+                onChange={handleChange}
+                placeholder={field.placeholder}
+                className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
+              />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -213,107 +314,98 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           <h2 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
             3. Dimensions &amp; Inventory
           </h2>
-          <p className="text-xs text-[#64748B] mt-0.5">Physical dimensions for AR spatial scale and price calculation</p>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Physical dimensions for AR spatial scale and price calculation
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-          <div>
-            <label htmlFor="product-width" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Width (cm) *
-            </label>
-            <input
-              id="product-width"
-              type="number"
-              name="width"
-              required
-              min="1"
-              value={formData.width}
-              onChange={handleChange}
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-height" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Height (cm) *
-            </label>
-            <input
-              id="product-height"
-              type="number"
-              name="height"
-              required
-              min="1"
-              value={formData.height}
-              onChange={handleChange}
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-depth" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Depth (cm) *
-            </label>
-            <input
-              id="product-depth"
-              type="number"
-              name="depth"
-              required
-              min="1"
-              value={formData.depth}
-              onChange={handleChange}
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="product-stock" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Stock Quantity *
-            </label>
-            <input
-              id="product-stock"
-              type="number"
-              name="stock"
-              required
-              min="0"
-              value={formData.stock}
-              onChange={handleChange}
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="product-price" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Price (₹ INR) *
-            </label>
-            <input
-              id="product-price"
-              type="number"
-              name="price"
-              required
-              min="0"
-              step="0.01"
-              value={formData.price}
-              onChange={handleChange}
-              placeholder="0.00"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
-            />
-          </div>
+          {[
+            { name: 'width', label: 'Width (cm) *', min: '1' },
+            { name: 'height', label: 'Height (cm) *', min: '1' },
+            { name: 'depth', label: 'Depth (cm) *', min: '1' },
+            { name: 'stock', label: 'Stock Quantity *', min: '0' },
+            { name: 'price', label: 'Price (₹ INR) *', min: '0' },
+          ].map((field) => (
+            <div key={field.name} className={field.name === 'price' ? 'sm:col-span-2' : ''}>
+              <label htmlFor={`product-${field.name}`} className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
+                {field.label}
+              </label>
+              <input
+                id={`product-${field.name}`}
+                type="number"
+                name={field.name}
+                required
+                min={field.min}
+                step={field.name === 'price' ? '0.01' : '1'}
+                value={formData[field.name as 'width' | 'height' | 'depth' | 'stock' | 'price']}
+                onChange={handleChange}
+                className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs font-semibold text-[#111827] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] shadow-sm"
+              />
+            </div>
+          ))}
         </div>
       </div>
 
       {/* 4. Media & 3D Assets */}
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 card-shadow space-y-4">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-8 card-shadow space-y-5">
         <div className="pb-3 border-b border-[#E2E8F0]">
           <h2 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
             4. Media &amp; 3D Assets
           </h2>
-          <p className="text-xs text-[#64748B] mt-0.5">High-resolution image URL and spatial asset URLs</p>
+          <p className="text-xs text-[#64748B] mt-0.5">
+            Upload product images and 3D furniture models directly.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div className="sm:col-span-2">
-            <label htmlFor="product-imageUrl" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              Image URL (Public HTTPS)
+        {/* Image Upload */}
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider">
+            Product Image
+          </label>
+
+          <input
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+            onChange={(e) => {
+              setImageFile(e.target.files?.[0] || null);
+              setImageProgress(0);
+            }}
+            className="block w-full text-xs text-[#64748B] file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-[#ECFDF5] file:text-[#047857] file:font-semibold file:cursor-pointer hover:file:bg-[#D1FAE5]"
+          />
+
+          <p className="text-xs text-[#94A3B8]">
+            PNG, JPG, WEBP · Maximum 10 MB
+          </p>
+
+          {imageFile && (
+            <>
+              <p className="text-xs text-[#047857]">
+                Selected: {imageFile.name}
+              </p>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${imageProgress}%` }} />
+              </div>
+            </>
+          )}
+
+          {formData.imageUrl && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-[#64748B]">
+                Current / uploaded image
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={formData.imageUrl}
+                alt="Product preview"
+                className="h-32 w-32 object-cover rounded-xl border border-[#E2E8F0]"
+              />
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="product-imageUrl" className="block text-xs font-semibold text-[#374151] mb-1.5">
+              Or paste Image URL
             </label>
             <input
               id="product-imageUrl"
@@ -321,14 +413,54 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               name="imageUrl"
               value={formData.imageUrl}
               onChange={handleChange}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
+              placeholder="https://example.com/furniture.png"
+              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] shadow-sm"
             />
           </div>
+        </div>
 
-          <div className="sm:col-span-2">
-            <label htmlFor="product-model3dUrl" className="block text-xs font-semibold text-[#374151] uppercase tracking-wider mb-1.5">
-              3D Model URL (GLB / USDZ)
+        <div className="border-t border-[#E2E8F0]" />
+
+        {/* 3D Model Upload */}
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-[#374151] uppercase tracking-wider">
+            3D Furniture Model
+          </label>
+
+          <input
+            type="file"
+            accept=".glb,.usdz,model/gltf-binary,model/vnd.usdz+zip"
+            onChange={(e) => {
+              setModelFile(e.target.files?.[0] || null);
+              setModelProgress(0);
+            }}
+            className="block w-full text-xs text-[#64748B] file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-[#ECFDF5] file:text-[#047857] file:font-semibold file:cursor-pointer hover:file:bg-[#D1FAE5]"
+          />
+
+          <p className="text-xs text-[#94A3B8]">
+            GLB, USDZ · Maximum 100 MB
+          </p>
+
+          {modelFile && (
+            <>
+              <p className="text-xs text-[#047857]">
+                Selected: {modelFile.name}
+              </p>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${modelProgress}%` }} />
+              </div>
+            </>
+          )}
+
+          {formData.model3dUrl && (
+            <p className="text-xs text-[#047857] break-all">
+              Current model: {formData.model3dUrl}
+            </p>
+          )}
+
+          <div>
+            <label htmlFor="product-model3dUrl" className="block text-xs font-semibold text-[#374151] mb-1.5">
+              Or paste 3D Model URL
             </label>
             <input
               id="product-model3dUrl"
@@ -337,7 +469,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               value={formData.model3dUrl}
               onChange={handleChange}
               placeholder="https://models.example.com/item.glb"
-              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] transition-all shadow-sm"
+              className="w-full rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs text-[#111827] placeholder-[#94A3B8] focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] shadow-sm"
             />
           </div>
         </div>
@@ -352,12 +484,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         >
           Cancel
         </button>
+
         <button
           type="submit"
           disabled={loading}
           className="px-6 py-2.5 rounded-xl bg-[#10B981] hover:bg-[#059669] text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-50"
         >
-          {loading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
+          {loading
+            ? 'Saving...'
+            : isEditing
+              ? 'Update Product'
+              : 'Create Product'}
         </button>
       </div>
     </form>
