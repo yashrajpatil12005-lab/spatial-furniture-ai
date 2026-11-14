@@ -63,11 +63,16 @@ const isChair =
 const isSofa =
   category.includes('sofa') || productName.includes('sofa');
 
+const isStudyTable =
+  category.includes('study table') ||
+  productName.includes('study table');
+
 const isDiningTable =
-  category.includes('dining table') ||
-  productName.includes('dining table') ||
-  category.includes('table') ||
-  productName.includes('table');
+  !isStudyTable &&
+  (
+    category.includes('dining table') ||
+    productName.includes('dining table')
+  );
 
 const isARSupported = isChair || isSofa || isDiningTable;
 
@@ -468,6 +473,7 @@ const arModelSrc = isDiningTable
     </div>
   );
 }
+
 
 
 
