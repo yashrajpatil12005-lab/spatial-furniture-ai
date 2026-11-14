@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -15,11 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SpatialAI — Premium Furniture & AI Spatial Visualization Platform",
+  title: "SpatialAI â€” Premium Furniture & AI Spatial Visualization Platform",
   description: "AI-powered furniture visualization, room reasoning, and digital twin retail platform.",
 };
 
 import { AuthProvider } from "@/lib/firebase/AuthContext";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col bg-[#F8FAFC] text-[#111827]">
         <AuthProvider>
+            <AnalyticsTracker />
           <Navbar />
           <main className="flex-grow pt-16">
             {children}
@@ -39,3 +41,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

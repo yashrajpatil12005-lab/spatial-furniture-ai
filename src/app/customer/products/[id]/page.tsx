@@ -10,6 +10,7 @@ import Link from 'next/link';
 import FurnitureCustomizer from '@/components/products/FurnitureCustomizer';
 import VisualizationPanel from '@/components/ai/VisualizationPanel';
 import ARModelViewer from '@/components/products/ARModelViewer';
+import { trackProductView } from '@/lib/analytics';
 
 export default function CustomerProductDetailPage({
   params,
@@ -17,7 +18,7 @@ export default function CustomerProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,19 @@ export default function CustomerProductDetailPage({
     }
   }, [resolvedParams.id, authLoading]);
 
+  useEffect(() => {
+    if (!product || !user || authLoading) return;
+
+    void trackProductView(
+      user.uid,
+      {
+        id: product.id || resolvedParams.id,
+        name: product.name,
+        category: String(product.category),
+      },
+      `/customer/products/${resolvedParams.id}`
+    );
+  }, [product, user, authLoading, resolvedParams.id]);
   // Detect supported AR furniture
 // Detect supported furniture for AR
 // Detect supported furniture for AR
@@ -473,6 +487,8 @@ const arModelSrc = isDiningTable
     </div>
   );
 }
+
+
 
 
 

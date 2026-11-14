@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/lib/firebase/ProtectedRoute';
@@ -12,6 +12,7 @@ import AdminQuickActions from '@/components/admin/AdminQuickActions';
 import AdminRecentProducts from '@/components/admin/AdminRecentProducts';
 import AdminLowStockAlerts from '@/components/admin/AdminLowStockAlerts';
 import AdminProfile from '@/components/admin/AdminProfile';
+import AdminAnalytics from '@/components/admin/AdminAnalytics';
 
 interface IntegrationsState {
   firebase: string;
@@ -181,7 +182,10 @@ export default function AdminPage() {
               {/* PLATFORM OVERVIEW CARDS */}
               <AdminOverview products={products} />
 
-              {/* QUICK ACTIONS */}
+              {/* CUSTOMER ANALYTICS */}
+          <AdminAnalytics />
+
+          {/* QUICK ACTIONS */}
               <AdminQuickActions />
 
               {/* LOW STOCK WARNING ALERTS */}
@@ -207,3 +211,4 @@ export default function AdminPage() {
     </ProtectedRoute>
   );
 }
+
