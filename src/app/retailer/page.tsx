@@ -7,6 +7,7 @@ import { seedDemoProducts, categorizeSeedingError } from '@/lib/products/seed';
 import { useState, useEffect } from 'react';
 import { getRetailerProducts } from '@/lib/products';
 import { Product } from '@/lib/types';
+import RoomScansGallery from '@/components/room-scans/RoomScansGallery';
 
 export default function RetailerDashboard() {
   const { user, userData, loading: authLoading } = useAuth();
@@ -202,6 +203,7 @@ export default function RetailerDashboard() {
               {loading ? 'Seeding demo catalog...' : 'Seed Demo Data'}
             </button>
           </div>
+	  <RoomScansGallery />
         </div>
       </div>
     </ProtectedRoute>
